@@ -202,10 +202,6 @@
   </header>
 
   <div class="controls">
-    <div class="field" style="flex:1 1 260px">
-      <label for="apiUrl">Issuer API (Lambda Function URL)</label>
-      <input id="apiUrl" type="text" placeholder="https://….lambda-url.us-east-1.on.aws/">
-    </div>
     <div class="field">
       <label for="card">Target card</label>
       <select id="card"></select>
@@ -487,13 +483,11 @@
 <script src="config.js" onerror="void 0"></script>
 <script>
 // The live issuer endpoint is not committed. Set it in a local config.js
-// (copy config.example.js), pass ?api=<url> in the URL, or paste it into
-// the "Issuer API" field below. Falls back to a placeholder.
+// (copy config.example.js) or pass ?api=<url> in the page URL.
 const DEFAULT_API = "https://YOUR-FUNCTION-URL.lambda-url.us-east-1.on.aws/";
-let LAMBDA_URL =
+const LAMBDA_URL =
   new URLSearchParams(location.search).get("api") ||
   (typeof window.CARDING_API_URL === "string" && window.CARDING_API_URL) ||
-  localStorage.getItem("cardingApiUrl") ||
   DEFAULT_API;
 const BLOCK_THRESHOLD = 5;
 const RISK_CUTOFF = 0.86; // keep in sync with the mitigation Lambda's RISK_CUTOFF env
@@ -703,7 +697,7 @@ async function tick() {
 
 function start() {
   if (!LAMBDA_URL || LAMBDA_URL === DEFAULT_API) {
-    log("Set the Issuer API URL first (field above, or a local config.js).", "bad");
+    log("No issuer endpoint set. Add a local config.js (copy config.example.js) or open this page with ?api=<your-function-url>.", "bad");
     return;
   }
   target = JSON.parse($("card").value);
@@ -767,16 +761,6 @@ function initCards() {
 $("btnStart").addEventListener("click", start);
 $("btnStop").addEventListener("click", () => stop());
 $("btnReset").addEventListener("click", resetView);
-
-const apiInput = $("apiUrl");
-apiInput.value = LAMBDA_URL === DEFAULT_API ? "" : LAMBDA_URL;
-apiInput.addEventListener("change", () => {
-  LAMBDA_URL = apiInput.value.trim() || DEFAULT_API;
-  if (LAMBDA_URL !== DEFAULT_API) {
-    try { localStorage.setItem("cardingApiUrl", LAMBDA_URL); } catch (e) {}
-  }
-  log("Issuer API set to " + LAMBDA_URL, "");
-});
 
 const modal = $("modalBack");
 $("btnReadMore").addEventListener("click", () => modal.classList.add("open"));

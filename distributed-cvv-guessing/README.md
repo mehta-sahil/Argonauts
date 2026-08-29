@@ -371,8 +371,7 @@ Python 3.9+, boto3, AWS CLI configured with credentials for account
    ```
    cp config.example.js config.js      # then edit config.js with your URL
    ```
-   or open `prototype.html?api=https://<your-fn-url>` or paste the URL
-   into the "Issuer API" field in the UI.
+   or open `prototype.html?api=https://<your-fn-url>`.
 
 3. Open prototype.html in a browser. Select a target card from the
    dropdown. Click "Start Attack". Transactions flow to your Lambda
