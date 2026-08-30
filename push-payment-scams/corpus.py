@@ -25,36 +25,82 @@ import random
 from config import (ARCHETYPES, CORPUS_PATH, CORPUS_SEED, MAX_TURNS,
                     N_LEGIT_CONVOS, N_SCAM_CONVOS)
 import legit
+from mutate import mutate
+from evade import soften
 from scammer import make_scammer
 from victim import Victim
 
+CASUAL_ARCHETYPES = {"romance", "purchase"}
+# how hard the scammer plays it. "soft" scams already read like a careful,
+# de-risked script; "camouflaged" ones have no tells at all and are meant
+# to slip past the text layer.
+INTENSITY = (["soft"] * 3 + ["normal"] * 4 + ["aggressive"] * 2)
+CAMOUFLAGE_RATE = 0.28
+
+
+def _camouflaged_scam(cid: int, rng: random.Random) -> dict:
+    """No tells at all: the conversation is generated from the *same*
+    templates as a genuine marketplace sale / invoice / bill-split, and
+    only the metadata betrays it — the payee is a fresh account the
+    customer has never paid, and (in the real world) the goods never
+    arrive. These are meant to slip past the text layer; whether the
+    payment guard catches one comes down to the amount and the payee."""
+    gen = rng.choice([legit.marketplace_sale, legit.supplier_invoice,
+                      legit.pay_a_friend, legit.marketplace_haggle, legit.split_the_bill])
+    turns_raw, payment = gen(rng)
+    turns = [{"speaker": sp, "text": mutate(tx, rng, casual=True), "stage": st, "turn": i}
+             for i, (sp, tx, st) in enumerate(turns_raw)]
+    if payment is None:                       # generator had no payment -> force one
+        acct = f"{rng.randint(10_000_000, 99_999_999)}"
+        sort = f"{rng.randint(10,99)}-{rng.randint(10,99)}-{rng.randint(10,99)}"
+        payment = {"amount": float(rng.choice([90, 180, 320, 640])),
+                   "new_account": acct, "sort_code": sort, "known_payee": False}
+    payment = {**payment, "archetype": "purchase", "known_payee": False,
+               "new_account": f"{rng.randint(10_000_000, 99_999_999)}"}
+    ask_turn = next((t["turn"] for t in turns if t["stage"] in ("details", "pay")), None)
+    return {"id": cid, "label": "scam", "archetype": "purchase", "turns": turns,
+            "payment": payment, "payment_made": any(t["stage"] == "pay" for t in turns),
+            "ask_turn": ask_turn, "intensity": "camouflaged"}
+
 
 def _scam_convo(cid: int, rng: random.Random, use_llm: bool) -> dict:
+    if rng.random() < CAMOUFLAGE_RATE:
+        return _camouflaged_scam(cid, rng)
     archetype = rng.choice(ARCHETYPES)
+    intensity = rng.choice(INTENSITY)
     scammer = make_scammer(archetype, rng, use_llm)
     victim = Victim(rng)
+    casual = archetype in CASUAL_ARCHETYPES
 
     turns, objection, ask_turn = [], None, None
-    for t in range(MAX_TURNS):
+    for _ in range(MAX_TURNS):
         text, stage = scammer.next_line(objection)
+        if intensity == "soft":
+            text = soften(text, rng.uniform(0.4, 0.8))
+        elif intensity == "normal" and rng.random() < 0.4:
+            text = soften(text, rng.uniform(0.15, 0.4))
+        text = mutate(text, rng, casual=casual or intensity == "camouflaged")
         turns.append({"speaker": "them", "text": text, "stage": stage, "turn": len(turns)})
         if stage == "ask":
             ask_turn = len(turns) - 1
         v_text, objection = victim.respond(text, stage)
-        turns.append({"speaker": "me", "text": v_text, "stage": "reply", "turn": len(turns)})
+        turns.append({"speaker": "me", "text": mutate(v_text, rng, casual=casual),
+                      "stage": "reply", "turn": len(turns)})
         if victim.complied or victim.disengaged:
             break
 
     return {
         "id": cid, "label": "scam", "archetype": archetype, "turns": turns,
         "payment": scammer.payment, "payment_made": victim.complied,
-        "ask_turn": ask_turn,
+        "ask_turn": ask_turn, "intensity": intensity,
     }
 
 
 def _legit_convo(cid: int, rng: random.Random) -> dict:
     turns_raw, payment = legit.make_legit(rng)
-    turns = [{"speaker": sp, "text": tx, "stage": st, "turn": i}
+    casual = payment is not None and payment.get("archetype", "") in (
+        "legit_friend", "legit_family", "legit_billsplit", "legit_marketplace")
+    turns = [{"speaker": sp, "text": mutate(tx, rng, casual=casual), "stage": st, "turn": i}
              for i, (sp, tx, st) in enumerate(turns_raw)]
     made = payment is not None and any(t["stage"] == "pay" for t in turns)
     return {

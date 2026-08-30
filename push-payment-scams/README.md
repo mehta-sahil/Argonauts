@@ -87,24 +87,45 @@ same argument for transaction models).
 
 ## Results (held-out, `python run.py`)
 
+Scam conversations come in two flavours:
+
+- **pressure** (~75%) — the scammer works urgency / authority / secrecy /
+  threat. These are also passed through a random softener + surface
+  mutator (`mutate.py`), and ~30% are "soft" (already de-risked
+  language). The text still gives them away.
+- **camouflaged** (~28%) — generated from the *same templates as a
+  genuine marketplace sale / invoice / bill-split*. No tells at all; only
+  the metadata (a fresh payee, goods that never arrive) betrays them.
+  These are meant to slip past a text model.
+
 | | |
 |---|---|
-| scam-intent classifier — conversation AUC-PR | ~1.00 on known patterns¹ |
-| flagged **before** the payment ask | ~all scam conversations, several turns early |
-| payment guard — scam payments stopped | ~100% |
-| payment guard — genuine-payment friction / hard false-block | low single digits % |
-| adversarial: text-only recall vs paraphrase strength | ~1.00 → ~0.6 |
-| adversarial: fusion recall | flat (~1.00) |
+| scam-intent classifier — conversation AUC-PR | **~0.95** |
+| recall — **pressure** scams | ~100% |
+| recall — **camouflaged** scams | **~25–30%** (they read like normal transactions) |
+| flagged **before** the payment ask | ~70–75% of scam conversations |
+| novel archetype (`investment` held out of training) | ~100% recall |
+| payment guard — scam payments stopped, overall | **~90%** |
+| payment guard — pressure / camouflaged | ~100% / ~70% |
+| payment guard — genuine friction / hard false-block | ~2% / ~2% |
+| adversarial: text-only recall vs paraphrase strength | **~0.76 → ~0.59** |
+| adversarial: fusion recall | flat (~0.90) |
 
-¹ The conversation templates are synthetic and finite, so a linear model
-learns them almost perfectly — a real deployment on live traffic would
-score lower. The point the lab demonstrates is the **shape**: streaming
-per-message detection ahead of the payment, the arms race under evasion,
-and the fusion layer holding when the text layer is defeated. The
-hardest real case — **invoice-redirect scam text is nearly identical to a
-genuine "our bank details changed" message** — is in the corpus
-(`legit.genuine_bank_detail_change`); those are separated only at the
-payment step.
+The story: the text layer catches overt manipulation and flags it several
+turns before the victim is asked to pay, but it misses conversations
+written to look ordinary. The payment guard recovers most of those via
+payment features (fresh payee, amount, instant transfer) — but not all.
+Fully camouflaged low-value scams evade both layers; catching those needs
+downstream signals (payee-account reputation, mule-network features,
+goods-not-received reports) this lab doesn't model. The hardest single
+case — **invoice-redirect scam text is nearly identical to a genuine "our
+bank details changed" message** (`legit.genuine_bank_detail_change`) — is
+separated only at the payment step, if at all.
+
+The templates are still synthetic and finite, so a live deployment on
+real traffic would score differently — but the corpus is no longer
+trivially separable, and the numbers above move when you retune
+`CAMOUFLAGE_RATE`, `INTENSITY`, and `mutate.py`.
 
 ---
 
@@ -120,6 +141,7 @@ payment step.
 | Scam messages measurably longer, urgency-heavy, phone ~97% / URL ~32% | SMS/smishing detection literature (Nature Sci Reports 2025) |
 | Linear model ≈ transformer −2pts on scam text | arXiv 2603.11358; SpotSpam |
 | Payment-side fusion, dynamic warnings, Confirmation of Payee | Feedzai; UK CoP scheme |
+| Camouflaged / "no red flags" scams that read like ordinary transactions | UK Finance purchase-scam & invoice-fraud case data |
 | Greedy word-substitution attack on text classifiers | Jin et al., "Is BERT Really Robust?", AAAI 2020 |
 | Adversarial evasion of fraud models; defence-in-depth | Lunghi et al., FRAUD-RLA, arXiv 2502.02290 |
 
@@ -132,9 +154,10 @@ payment step.
 | `config.py` | archetypes, corpus size, thresholds, hyperparams |
 | `lexicons.py` | urgency / authority / secrecy / threat / payment word lists |
 | `scammer.py` | red team — deterministic dialogue engine + LLM back-end |
+| `mutate.py` | generation-time surface mutation (synonyms, contractions, fillers, casing, typos) applied to every line |
 | `victim.py` | victim simulator (suspicion, objections, compliance) |
 | `legit.py` | genuine hard-negative conversations (incl. the bank-detail-change look-alike) |
-| `corpus.py` | build `data/conversations.jsonl` |
+| `corpus.py` | build `data/conversations.jsonl` — pressure + camouflaged scams + hard negatives |
 | `features.py` | per-message lexical / structural features |
 | `classifier.py` | scam-intent linear model, streaming per-message + per-conversation score |
 | `payment_guard.py` | fusion model + allow/warn/hold/block policy |
