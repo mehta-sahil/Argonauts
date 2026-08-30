@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mule-Account Layering, GNN vs GenAI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="demo_data.js" onerror="void 0"></script>
+<style>
+  :root {
+    --bg:#0b0f17; --panel:#121826; --panel2:#1a2130; --line:#262f42;
+    --text:#e6ebf4; --muted:#8a97ac; --accent:#22d3ee;
+    --green:#34d399; --amber:#fbbf24; --red:#f87171;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--bg); color:var(--text); font-size:14px; line-height:1.4;
+    display:flex; flex-direction:column; height:100vh; overflow:hidden;
+  }
+  header {
+    padding:12px 18px; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  header h1 { font-size:16px; font-weight:650; }
+  header .sub { font-size:12px; color:var(--muted); margin-top:2px; }
+  .main { flex:1; display:flex; min-height:0; }
+  .graph { flex:1; position:relative; }
+  svg { width:100%; height:100%; display:block; }
+  .side {
+    width:340px; border-left:1px solid var(--line); background:var(--panel);
+    padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:18px;
+  }
+  .controls {
+    position:absolute; top:14px; left:14px; background:rgba(18,24,38,.92);
+    border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+    display:flex; flex-direction:column; gap:10px; font-size:12px; max-width:230px;
+  }
+  .controls label { color:var(--muted); text-transform:uppercase; letter-spacing:.4px; font-size:10px; }
+  .controls select, .controls input[type=range] {
+    width:100%; background:var(--panel2); border:1px solid var(--line);
+    color:var(--text); border-radius:6px; padding:5px 7px; font-size:12px; font-family:inherit;
+  }
+  .row { display:flex; align-items:center; gap:7px; }
+  .row input[type=checkbox] { accent-color:var(--accent); }
+  h2 { font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin-bottom:8px; }
+  .metric { display:flex; justify-content:space-between; align-items:baseline; padding:5px 0;
+            border-bottom:1px solid rgba(38,47,66,.5); font-size:13px; }
+  .metric:last-child { border-bottom:none; }
+  .metric .v { font-weight:700; font-variant-numeric:tabular-nums; font-family:ui-monospace,monospace; }
+  .metric .v.win { color:var(--green); }
+  .bars { margin-top:8px; }
+  .bar-row { font-size:12px; margin:6px 0; }
+  .bar-track { height:8px; border-radius:4px; background:var(--line); overflow:hidden; margin-top:3px; }
+  .bar-fill { height:100%; }
+  .patt { font-size:12px; color:var(--muted); font-family:ui-monospace,monospace; padding:3px 0; }
+  .legend { display:flex; flex-direction:column; gap:5px; font-size:12px; }
+  .legend .sw { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:7px; vertical-align:-1px; }
+  .narr { font-size:12px; color:var(--muted); line-height:1.55; border-top:1px solid var(--line); padding-top:12px; }
+  .node { cursor:pointer; stroke:#0b0f17; stroke-width:.5; }
+  .node.chain { stroke:#fff; stroke-width:1.2; }
+  .link { stroke:#2a3348; }
+  .link.launder { stroke:var(--amber); }
+  .tip {
+    position:absolute; pointer-events:none; background:#05070c; border:1px solid var(--line);
+    border-radius:7px; padding:8px 10px; font-size:12px; font-family:ui-monospace,monospace;
+    color:var(--text); opacity:0; transition:opacity .12s; max-width:240px;
+  }
+  .empty { padding:40px; color:var(--muted); text-align:center; }
+  code { background:var(--panel2); padding:1px 4px; border-radius:4px; font-family:ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Mule-Account Layering &mdash; GNN vs GenAI</h1>
+    <div class="sub">An LLM agent designs a fan-out / layering / gather laundering chain. A 2-layer GraphSAGE model flags the mule accounts from transaction topology.</div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="graph">
+    <div class="controls">
+      <div>
+        <label for="colorBy">Colour nodes by</label>
+        <select id="colorBy">
+          <option value="score">GraphSAGE risk score</option>
+          <option value="lr_score">Tabular model score</option>
+          <option value="truth">Ground truth (the real ring)</option>
+          <option value="none">Nothing (raw graph)</option>
+        </select>
+      </div>
+      <div>
+        <label for="thresh">Dim nodes below score <span id="threshVal">0.00</span></label>
+        <input id="thresh" type="range" min="0" max="1" step="0.01" value="0">
+      </div>
+      <div class="row"><input type="checkbox" id="showLaunder" checked><label for="showLaunder" style="text-transform:none;font-size:12px;letter-spacing:0">show laundering transfers</label></div>
+      <div class="row"><input type="checkbox" id="showNormal" checked><label for="showNormal" style="text-transform:none;font-size:12px;letter-spacing:0">show normal transfers</label></div>
+    </div>
+    <svg id="svg"></svg>
+    <div class="tip" id="tip"></div>
+  </div>
+
+  <div class="side" id="side">
+    <div class="empty" id="noData">
+      <b>demo_data.js not found.</b><br><br>
+      Run <code>python run.py</code> in this folder first, then reload.
+    </div>
+  </div>
+</div>
+
+<script>
+const DEMO = window.DEMO;
+const svg = d3.select("#svg");
+const tip = d3.select("#tip");
+
+if (!DEMO) {
+  d3.select("#svg").style("display", "none");
+} else {
+  d3.select("#noData").remove();
+  render();
+}
+
+function render() {
+  const { nodes, links, meta } = DEMO;
+  buildSidebar(meta);
+
+  const el = document.querySelector(".graph");
+  let W = el.clientWidth, H = el.clientHeight;
+  svg.attr("viewBox", [0, 0, W, H]);
+
+  const g = svg.append("g");
+  svg.call(d3.zoom().scaleExtent([0.2, 6]).on("zoom", e => g.attr("transform", e.transform)));
+
+  const linkSel = g.append("g").attr("stroke-opacity", 0.35)
+    .selectAll("line").data(links).join("line")
+    .attr("class", d => "link" + (d.kind === "launder" ? " launder" : ""))
+    .attr("stroke-width", d => d.kind === "launder" ? 1.6 : 0.5);
+
+  const rScale = d3.scaleSqrt().domain(d3.extent(nodes, d => d.degree)).range([2.5, 9]);
+  const nodeSel = g.append("g")
+    .selectAll("circle").data(nodes).join("circle")
+    .attr("class", d => "node" + (d.label ? " chain" : ""))
+    .attr("r", d => rScale(d.degree))
+    .on("mousemove", (e, d) => showTip(e, d))
+    .on("mouseleave", () => tip.style("opacity", 0));
+
+  const sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(28).strength(0.25))
+    .force("charge", d3.forceManyBody().strength(-26))
+    .force("center", d3.forceCenter(W / 2, H / 2))
+    .force("collide", d3.forceCollide().radius(d => rScale(d.degree) + 1.5))
+    .alphaDecay(0.035);
+
+  sim.on("tick", () => {
+    linkSel.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+           .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    nodeSel.attr("cx", d => d.x).attr("cy", d => d.y);
+  });
+
+  // --- colouring / filtering ---
+  const reds = d3.scaleSequential(d3.interpolateReds).domain([0, 1]);
+  const colorBy = document.getElementById("colorBy");
+  const thresh = document.getElementById("thresh");
+  const threshVal = document.getElementById("threshVal");
+  const showLaunder = document.getElementById("showLaunder");
+  const showNormal = document.getElementById("showNormal");
+
+  function paint() {
+    const mode = colorBy.value;
+    const t = +thresh.value;
+    threshVal.textContent = t.toFixed(2);
+    nodeSel.attr("fill", d => {
+      if (mode === "none") return "#4b5566";
+      if (mode === "truth") return d.label ? (d.layer_mule ? "#fbbf24" : "#f87171") : "#3a4150";
+      return d[mode] < t ? "#232b3b" : reds(d[mode]);
+    }).attr("fill-opacity", d => {
+      if (mode === "none" || mode === "truth") return 1;
+      return d[mode] < t ? 0.3 : 1;
+    });
+  }
+  function filterLinks() {
+    linkSel.attr("display", d =>
+      (d.kind === "launder" ? showLaunder.checked : showNormal.checked) ? null : "none");
+  }
+  [colorBy, thresh].forEach(x => x.addEventListener("input", paint));
+  [showLaunder, showNormal].forEach(x => x.addEventListener("change", filterLinks));
+  paint(); filterLinks();
+
+  window.addEventListener("resize", () => {
+    W = el.clientWidth; H = el.clientHeight;
+    svg.attr("viewBox", [0, 0, W, H]);
+    sim.force("center", d3.forceCenter(W / 2, H / 2)).alpha(0.3).restart();
+  });
+}
+
+function showTip(e, d) {
+  const stage = d.stage ? d.stage : "&mdash;";
+  tip.html(
+    `account #${d.id} &nbsp; <b>${d.kind}</b><br>` +
+    `role: ${stage}${d.layer_mule ? " (bland layer mule)" : ""}<br>` +
+    `in a laundering ring: <b>${d.label ? "yes" : "no"}</b><br>` +
+    `GraphSAGE score: ${d.score.toFixed(3)}<br>` +
+    `tabular score: ${d.lr_score.toFixed(3)}<br>` +
+    `degree: ${d.degree}`
+  ).style("left", (e.offsetX + 16) + "px").style("top", (e.offsetY + 12) + "px")
+   .style("opacity", 1);
+}
+
+function buildSidebar(meta) {
+  const m = meta.metrics;
+  const side = d3.select("#side");
+
+  side.append("div").html(`
+    <h2>Detection &mdash; held-out test, mean of 5 splits</h2>
+    <div class="metric"><span>Tabular model &mdash; avg precision</span>
+      <span class="v">${m.lr_ap_mean} &plusmn; ${m.lr_ap_std}</span></div>
+    <div class="metric"><span>GraphSAGE &mdash; avg precision</span>
+      <span class="v win">${m.gcn_ap_mean} &plusmn; ${m.gcn_ap_std}</span></div>
+    <div class="bars">
+      <div class="bar-row">bland layer mules caught by the tabular model &nbsp;<b>${Math.round(m.lr_bland_recall_mean*100)}%</b>
+        <div class="bar-track"><div class="bar-fill" style="width:${m.lr_bland_recall_mean*100}%;background:#8a97ac"></div></div></div>
+      <div class="bar-row">bland layer mules caught by GraphSAGE &nbsp;<b>${Math.round(m.gcn_bland_recall_mean*100)}%</b>
+        <div class="bar-track"><div class="bar-fill" style="width:${m.gcn_bland_recall_mean*100}%;background:#34d399"></div></div></div>
+    </div>`);
+
+  side.append("div").html(`
+    <h2>The attack (${meta.n_launder_txns} laundering transfers)</h2>
+    ${meta.patterns.map(p => `<div class="patt">ring ${p.pattern_id}: fan-out ${p.fanout} &rarr; ${p.layers} layer round(s) &rarr; gather ${p.gather} &nbsp; skim ${(p.cut_per_hop*100).toFixed(0)}%/hop &nbsp;[${p.backend}]</div>`).join("")}
+    <div class="patt" style="color:#e6ebf4;margin-top:6px">${meta.n_accounts} accounts, ${meta.n_txns} transactions, ${m.n_layer_mules} bland layer mules</div>`);
+
+  side.append("div").attr("class", "legend").html(`
+    <h2>Legend</h2>
+    <div><span class="sw" style="background:#f87171"></span>source / cash-out (visible on its own)</div>
+    <div><span class="sw" style="background:#fbbf24"></span>bland layer mule (only the graph gives it away)</div>
+    <div><span class="sw" style="background:#67000d"></span>&nbsp;&rarr;&nbsp;<span class="sw" style="background:#fff5f0"></span> risk score, high &rarr; low</div>
+    <div><span class="sw" style="background:#fbbf24;height:3px"></span>laundering transfer</div>`);
+
+  side.append("div").attr("class", "narr").text(meta.narrative);
+}
+</script>
+</body>
+</html>

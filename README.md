@@ -13,6 +13,12 @@ banks, merchants, or payment networks are ever contacted.
   with a centralized per-PAN mismatch counter and blocks the card.
   Runs on live AWS (Lambda + DynamoDB Streams).
 
+- **mule-account-layering** - Money-mule laundering. An LLM agent designs
+  a fan-out / layering / gather hop-chain through recruited mule
+  accounts; a 2-layer GraphSAGE model flags the mules from transaction
+  topology, including the middle-of-the-chain accounts a plain
+  classifier misses. Runs locally.
+
 ## Adding a lab
 
 New attack types go in their own sibling folder, named after the attack

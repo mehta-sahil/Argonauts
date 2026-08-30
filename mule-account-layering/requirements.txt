@@ -1,0 +1,10 @@
+# Core (the simulation + GraphSAGE):
+numpy>=1.24
+scikit-learn>=1.3          # logistic-regression baseline only
+
+# Optional — LLM attacker back-end (`python run.py --llm`):
+#   anthropic>=0.40
+# plus an ANTHROPIC_API_KEY, or `ant auth login`.
+# Without it the deterministic planner is used (same output schema).
+
+# The graph UI (prototype.html) loads d3 v7 from a CDN — no install.

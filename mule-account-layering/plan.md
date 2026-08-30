@@ -1,0 +1,18 @@
+One hour changes this a lot — no time for slow installs or big downloads. Here's a plan built to actually finish in 60 minutes, grounded in what the papers actually describe.
+
+## What you're building
+An LLM agent plays money launderer: it decides a mule hop-chain (how many intermediate accounts, how it splits/reassembles the amount, timing/delay between hops) mimicking the **fan-out → layering → gather-scatter/scatter-gather** typology from IBM's AMLworld paper (Altman et al. 2023) — this is literally their definition of a laundering pattern: money fans out from a source into several mule accounts, bounces through them, then gathers back into a smaller number of cash-out accounts. A small GNN (hand-rolled, no heavy deps) then flags the mule accounts on the transaction graph. That's the "GNN vs GenAI" demo the deck wants.
+
+## Time budget (60 min hard stop)
+
+**0. Data — 5 min, no download.** Skip the full Kaggle IBM AMLworld pull (5M rows is a real risk to your 1-hour clock, plus Kaggle auth friction). Instead: generate a small synthetic "background" graph in code (500–1000 accounts, few thousand normal transactions) using the same statistical shape IBM reports — e.g. realistic-ish degree distribution, ~1 laundering pattern per few thousand transactions (their LI-Large ratio was ~1:1,750) — just scaled down. This keeps you self-contained and fast; you can *say* it mirrors AMLworld's parameters even though it's downsampled synthetic, which is honest and still research-grounded.
+
+**1. Attacker: LLM agent — 10 min.** One call to an LLM (your Claude/OpenAI key) with a system prompt describing the typology constraints (max hop count, amount decay per hop to simulate fees/cuts, must stay under a naive velocity threshold like "<5 txns/account/day" to look evasive). It returns JSON: a list of hops (from, to, amount, delay). A small Python function turns that JSON into real graph edges layered onto the background graph. This is the genuinely "agentic" part — the LLM is choosing structure, not you hardcoding it.
+
+**2. Defender: tiny GCN — 15 min.** Skip `torch_geometric` (dependency risk in a 1-hour window). Hand-roll a 2-layer graph convolution in plain PyTorch: normalize the adjacency matrix, do `H' = ReLU(Â H W)` twice, then a linear classifier head. Train on node labels (mule-chain accounts = 1, everything else = 0) — with this few accounts it trains in seconds on CPU. This is real GNN math (same idea as GCN in Weber et al.'s Elliptic paper), just without the fragile install.
+
+**3. Web UI — 15 min.** Force-directed graph (D3 or vis-network) rendered in a single HTML file or React artifact: nodes colored by GNN fraud score (red gradient), the LLM-generated hop-chain path highlighted distinctly, a slider or toggle to show "before defense" (raw graph) vs "after defense" (flagged). This is your "presentable prototype" — visual, live, explainable in 30 seconds to a judge.
+
+**4. Glue + narrative — 10 min buffer.** One script that runs attacker → defender → dumps JSON → UI reads it. Rehearse the one-line pitch: "An LLM agent designs a money-mule laundering chain the way real launderers structure fan-out/gather-scatter patterns; a graph neural net trained on transaction topology catches it even though no single transaction looks suspicious in isolation."
+
+Want me to start writing the actual code now — attacker script first, or the GCN?Let me know which piece to code first.
