@@ -1,0 +1,7 @@
+# Core:
+numpy>=1.24
+scikit-learn>=1.3        # HistGradientBoosting anti-spoof + logistic context model
+# scipy is pulled in by scikit-learn; biomarkers.extract_from_wav() uses scipy.fft
+
+# The arena UI (prototype.html) pulls d3 v7 from a CDN — no install.
+# No audio libraries, no LLM — the lab is a feature-level simulation.

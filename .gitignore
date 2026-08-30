@@ -25,6 +25,8 @@ push-payment-scams/demo_data.js
 push-payment-scams/data/
 chatbot-prompt-injection/demo_data.js
 chatbot-prompt-injection/data/
+voice-auth-bypass/demo_data.js
+voice-auth-bypass/data/
 
 # OS
 .DS_Store
