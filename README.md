@@ -26,6 +26,14 @@ banks, merchants, or payment networks are ever contacted.
   payment features to block. When the scammer paraphrases to dodge the
   text model, the fusion layer still holds. Runs locally.
 
+- **chatbot-prompt-injection** - A Gemini agent jailbreaks a Gemini bank
+  support bot into an out-of-policy $500 refund and into leaking its
+  system prompt. Defence is a guardrail classifier + semantic router +
+  a deterministic policy engine that gates the refund tool in code. The
+  classifier is bypassable by obfuscation; the policy engine stops 100%
+  of the money movement even when the bot is fully jailbroken. Real
+  Gemini via `--llm` (needs a key), offline engine otherwise.
+
 ## Adding a lab
 
 New attack types go in their own sibling folder, named after the attack

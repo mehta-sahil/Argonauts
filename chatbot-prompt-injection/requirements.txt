@@ -1,0 +1,10 @@
+# Core:
+numpy>=1.24
+scikit-learn>=1.3        # the MoJE-style guardrail classifier
+
+# Gemini is called over raw HTTPS (stdlib urllib) — no SDK, the build
+# machine's disk is full. Set GEMINI_API_KEY (env) or copy .env.example
+# to .env. Without a key, run.py uses the offline rule-based engines and
+# the committed cache.
+
+# The arena UI (prototype.html) pulls d3 v7 from a CDN — no install.
