@@ -70,7 +70,12 @@ def _evasion_curve(defense, seed=0):
 
 def main(use_llm: bool):
     use_llm = use_llm and gemini.available()
-    print(f"engine: {'Gemini (' + gemini.__dict__.get('GEMINI_MODEL', 'flash') + ')' if use_llm else 'offline rule-based'}")
+    if use_llm:
+        print("engine: Gemini requested (falls back to the offline rule-based engine "
+              "per-call if the key/quota fails)")
+    else:
+        print("engine: offline rule-based" + ("" if gemini.available()
+              else " (no GEMINI_API_KEY — set one in .env for the real battle)"))
 
     guard, (tx, ty) = train_guardrail()
     defenses = {c: Defense(c, guard) for c in DEFENSE_CONFIGS}
@@ -126,6 +131,9 @@ def _write_demo(episodes, summary, board, guard, heldout):
             "goal": ep["goal"], "technique": ep["technique"], "defense": ep["defense"],
             "success": ep["success"], "success_round": ep["success_round"],
             "blocked_by": ep["blocked_by"],
+            "policy_denials": ep.get("policy_denials", 0),
+            "guardrail_blocks": ep.get("guardrail_blocks", 0),
+            "bot_attempts": ep.get("bot_attempts", 0),
             "turns": [{
                 "round": t["round"], "attacker": t["attacker"][:500],
                 "screen": t["screen"],

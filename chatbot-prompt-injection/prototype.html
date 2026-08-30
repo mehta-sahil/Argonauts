@@ -109,6 +109,8 @@ function build(){
       `<span class="pill mut">defence: ${ep.defense}</span>`+
       (!ep.success&&ep.blocked_by?`<span class="pill warn">stopped by: ${ep.blocked_by.replace(/_/g,' ')}</span>`:"")+
       (ep.success?`<span class="pill bad">${ep.goal==='refund'?'$'+DEMO.target_refund+' moved':'system prompt leaked'} on round ${ep.success_round+1}</span>`:"")+
+      (ep.policy_denials>0?`<span class="pill ok">bot jailbroken ${ep.bot_attempts||ep.policy_denials}× — code denied every refund</span>`:"")+
+      (ep.guardrail_blocks>0&&!ep.policy_denials?`<span class="pill mut">guardrail blocked ${ep.guardrail_blocks}</span>`:"")+
       `<span style="color:var(--muted)">${ep.turns.length} round(s)</span>`;
     ep.turns.forEach(t=>{
       const d=document.createElement("div");d.className="round";

@@ -104,19 +104,19 @@ Metrics are AgentDojo-style — **Attack Success Rate** + **Utility**:
 
 **Headline (offline engine):**
 
-| config | refund ASR | leak ASR | utility | why |
+| config | refund ASR | leak ASR | utility | what the transcripts show |
 |---|---|---|---|---|
-| `none` | ~43% | ~100% | 12/12 | bot alone; sophisticated injections land, it reads out its prompt |
-| `guardrail` | **~43%** | **0%** | 12/12 | the classifier barely dents the refund attack — obfuscation walks past it — but the router kills the leak requests |
-| `policy` | **0%** | 0% | 12/12 | the code gate stops **all** money movement even with a fully jailbroken bot; its output-scan sibling stops the leak |
-| `full` | ~0% | ~0% | 12/12 | both, no genuine-refund friction |
+| `none` | **~100%** | ~100% | 12/12 | the bot gets worn down in 2-4 rounds, calls `issue_fee_refund($500)`, money moves; it also reads out its prompt on request |
+| `guardrail` | **~43%** | **0%** | 12/12 | the classifier blocks blatant injections, so the attacker obfuscates (base64 / homoglyph) and ~half get through — but the router kills every leak request |
+| `policy` | **0%** | 0% | 12/12 | the bot is still jailbroken **4-7 times per episode** ("Okay, I've overridden the check…") — and the policy engine denies **every** call. `$0` moved. The output scan redacts the leak. |
+| `full` | ~0% | ~0% | 12/12 | both, and genuine ≤$50 refunds still go through |
 
 Two takeaways: (1) an input **classifier does almost nothing for the
 money** — obfuscation bypasses it (see the evasion curve); (2)
 **deterministic constraints protect *actions*, not *information*** — the
-policy engine stops the refund but not the leak; you need the output
-filter for that. Only `full` covers both while still fulfilling genuine
-≤$50 refunds.
+policy engine stops the refund cold but does nothing for the leak; you
+need the output filter for that. Only `full` covers both while still
+fulfilling genuine ≤$50 refunds.
 
 Gemini responses are cached to `data/llm_cache.json`, so re-runs are free
 and the committed demo replays without a key.
