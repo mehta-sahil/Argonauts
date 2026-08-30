@@ -19,6 +19,13 @@ banks, merchants, or payment networks are ever contacted.
   topology, including the middle-of-the-chain accounts a plain
   classifier misses. Runs locally.
 
+- **push-payment-scams** - Authorized Push Payment (APP) fraud. An LLM
+  scammer runs a social-engineering conversation to get a victim to
+  authorize a transfer; a streaming scam-intent text model flags it
+  before the payment ask, and a payment-risk guard fuses that with
+  payment features to block. When the scammer paraphrases to dodge the
+  text model, the fusion layer still holds. Runs locally.
+
 ## Adding a lab
 
 New attack types go in their own sibling folder, named after the attack

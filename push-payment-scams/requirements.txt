@@ -1,0 +1,10 @@
+# Core:
+numpy>=1.24
+scikit-learn>=1.3       # TF-IDF, logistic regression, HistGradientBoosting
+
+# Optional — LLM scammer back-end (`python run.py --llm`):
+#   anthropic>=0.40
+# plus ANTHROPIC_API_KEY, or `ant auth login`.
+# Without it the deterministic dialogue engine is used.
+
+# The chat UI (prototype.html) pulls d3 v7 from a CDN — no install.
