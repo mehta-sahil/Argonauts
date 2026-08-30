@@ -15,7 +15,6 @@ Both expose:  next_line(state) -> str   and   state carries `stage`,
 `turn`, `last_victim`, plus the scam's slots (amount, new_account, ...).
 """
 
-import os
 import random
 
 from config import LLM_MODEL
@@ -275,11 +274,10 @@ class LLMScammer:
         self._history: list[dict] = []
         self._client = None
         try:
-            import anthropic
-            if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
-                self._client = anthropic.Anthropic()
-            else:
-                self._client = anthropic.Anthropic()   # may still work via `ant auth`
+            import anthropic  # type: ignore  # optional dependency, only for --llm
+
+            # works with ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN or an `ant auth` profile
+            self._client = anthropic.Anthropic()
         except Exception:
             self._client = None
 
@@ -312,4 +310,6 @@ class LLMScammer:
 
 
 def make_scammer(archetype: str, rng: random.Random, use_llm: bool):
+    # Camouflaged scams (no tells at all) are built in corpus._camouflaged_scam
+    # by reusing the genuine-conversation templates verbatim — see that file.
     return LLMScammer(archetype, rng) if use_llm else DeterministicScammer(archetype, rng)
