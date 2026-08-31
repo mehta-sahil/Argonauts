@@ -73,11 +73,11 @@ const checkConfig = [
 
 export const TelemetryPanel = ({ telemetry, currentPhase }) => {
   return (
-    <div className="bg-navy-card/90 rounded-2xl border border-navy-border p-5 shadow-2xl backdrop-blur-sm flex flex-col justify-between h-full">
-      
+    <div className="bg-navy-card/90 rounded-2xl border border-navy-border p-4 sm:p-5 shadow-2xl backdrop-blur-sm flex flex-col justify-between h-full">
+
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2.5">
+        <div className="flex items-center justify-between gap-2 flex-wrap mb-4">
+          <div className="flex items-center space-x-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-mc-amber/10 border border-mc-amber/30 flex items-center justify-center text-mc-amber font-mono font-bold text-sm">
               03
             </div>
@@ -119,20 +119,20 @@ export const TelemetryPanel = ({ telemetry, currentPhase }) => {
             return (
               <div
                 key={item.key}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-navy-dark/70 border border-navy-border hover:border-slate-700 transition-all"
+                className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-navy-dark/70 border border-navy-border hover:border-slate-700 transition-all"
               >
-                <div className="flex items-center space-x-3">
-                  <div className={`p-1.5 rounded-lg bg-navy-light/80 border border-navy-border ${iconColor}`}>
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className={`shrink-0 p-1.5 rounded-lg bg-navy-light/80 border border-navy-border ${iconColor}`}>
                     <Icon className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h3 className="text-xs font-semibold text-slate-200">{item.label}</h3>
-                    <p className="text-[10px] text-slate-500 font-mono">{item.sub}</p>
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-semibold text-slate-200 truncate">{item.label}</h3>
+                    <p className="text-[10px] text-slate-500 font-mono truncate">{item.sub}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <span className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg border flex items-center space-x-1.5 ${badgeBg}`}>
+                <div className="flex items-center space-x-2 shrink-0">
+                  <span className={`text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg border flex items-center space-x-1.5 whitespace-nowrap ${badgeBg}`}>
                     {isPassed && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline" />}
                     {isFailed && <XCircle className="w-3.5 h-3.5 text-mc-red inline" />}
                     {isChecking && <Clock className="w-3.5 h-3.5 text-mc-amber animate-spin inline" />}
@@ -146,7 +146,7 @@ export const TelemetryPanel = ({ telemetry, currentPhase }) => {
       </div>
 
       {/* Security Engine Specs */}
-      <div className="mt-4 pt-3 border-t border-navy-border/60 flex items-center justify-between text-[10px] font-mono text-slate-500">
+      <div className="mt-4 pt-3 border-t border-navy-border/60 flex items-center justify-center sm:justify-between flex-wrap gap-x-2 gap-y-1 text-[10px] font-mono text-slate-500">
         <span>ARC-FACE 512-D ONNX</span>
         <span>•</span>
         <span>SOBEL 3X3 RESIDUAL</span>

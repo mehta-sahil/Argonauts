@@ -57,7 +57,10 @@ export const FaceMeshOverlay = ({ landmarks, width = 640, height = 480 }) => {
       ref={canvasRef}
       width={width}
       height={height}
-      className="absolute inset-0 w-full h-full pointer-events-none z-10"
+      // The <video> is mirrored (-scale-x-100) for a natural selfie view, but the
+      // landmark coordinates are in the raw camera space. Mirror the overlay too so
+      // the mesh lines up with the face instead of appearing on the opposite side.
+      className="absolute inset-0 w-full h-full pointer-events-none z-10 transform -scale-x-100"
     />
   );
 };

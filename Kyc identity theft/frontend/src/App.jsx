@@ -222,8 +222,8 @@ export const App = () => {
       <Header isConnected={isConnected} phase={currentPhase} />
 
       {/* Main Content Grid */}
-      <main className="max-w-7xl mx-auto px-6 py-6 w-full flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
           
           {/* Left Column (7 cols): ID Upload + Live Video */}
           <div className="lg:col-span-7 space-y-6">
@@ -266,7 +266,7 @@ export const App = () => {
         </div>
 
         {/* Bottom Verdict Bar */}
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6">
           <VerdictBar
             verdict={verdict}
             timeRemaining={timeRemaining}

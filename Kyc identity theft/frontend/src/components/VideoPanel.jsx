@@ -131,8 +131,8 @@ export const VideoPanel = ({
     >
       
       {/* Top Controls & Status */}
-      <div className="flex items-center justify-between mb-3 z-20">
-        <div className="flex items-center space-x-2.5">
+      <div className="flex items-center justify-between gap-2 mb-3 z-20">
+        <div className="flex items-center space-x-2.5 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-mc-red/10 border border-mc-red/30 flex items-center justify-center text-mc-red font-mono font-bold text-sm">
             02
           </div>
@@ -151,7 +151,7 @@ export const VideoPanel = ({
         <button
           type="button"
           onClick={() => setShowMesh(!showMesh)}
-          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono transition-all cursor-pointer ${
+          className={`shrink-0 flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all cursor-pointer ${
             showMesh 
               ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300' 
               : 'bg-navy-dark border-navy-border text-slate-400'
@@ -179,9 +179,9 @@ export const VideoPanel = ({
 
         {/* Flash-PAD Status Banner */}
         {flashColor && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-navy-dark/95 text-white px-4 py-1.5 rounded-full border-2 border-mc-amber text-xs font-mono font-bold animate-pulse flex items-center space-x-2 shadow-2xl">
-            <span className="w-2.5 h-2.5 rounded-full bg-mc-amber animate-ping" />
-            <span>OPTICAL FLASH-PAD ACTIVE (400ms): {flashColor}</span>
+          <div className="absolute top-3 sm:top-4 left-1/2 -translate-x-1/2 z-40 max-w-[92%] bg-navy-dark/95 text-white px-3 sm:px-4 py-1.5 rounded-full border-2 border-mc-amber text-[10px] sm:text-xs font-mono font-bold animate-pulse flex items-center space-x-2 shadow-2xl">
+            <span className="w-2.5 h-2.5 rounded-full bg-mc-amber animate-ping shrink-0" />
+            <span className="truncate">OPTICAL FLASH-PAD ACTIVE (400ms): {flashColor}</span>
           </div>
         )}
 
@@ -208,9 +208,9 @@ export const VideoPanel = ({
 
         {/* Action Challenge Prompt HUD */}
         {phase === 'action_challenge' && actionChallenge && (
-          <div className="absolute bottom-4 left-4 right-4 z-30 bg-navy-dark/95 border-2 border-mc-amber rounded-xl p-3.5 shadow-2xl backdrop-blur-md">
-            <div className="flex items-center justify-between">
-              <div>
+          <div className="absolute bottom-3 sm:bottom-4 left-3 right-3 sm:left-4 sm:right-4 z-30 bg-navy-dark/95 border-2 border-mc-amber rounded-xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="min-w-0">
                 <span className="text-[10px] font-mono text-mc-amber uppercase tracking-wider font-bold">
                   ACTIVE CHALLENGE REQUIRED
                 </span>
@@ -279,7 +279,7 @@ export const VideoPanel = ({
       </div>
 
       {/* Real-time Facial Metric Telemetry Bar (4 Columns) */}
-      <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs font-mono bg-navy-dark/80 p-2.5 rounded-xl border border-navy-border">
+      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs font-mono bg-navy-dark/80 p-2.5 rounded-xl border border-navy-border">
         <div>
           <span className="text-slate-500 block text-[10px]">EAR (BLINK)</span>
           <span className={`font-bold ${ear < 0.22 ? 'text-mc-amber' : 'text-slate-300'}`}>

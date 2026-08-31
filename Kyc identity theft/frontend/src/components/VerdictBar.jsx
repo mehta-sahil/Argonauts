@@ -50,7 +50,7 @@ export const VerdictBar = ({
   const riskLevel = verdict?.risk_level || 'LOW';
 
   return (
-    <div className="bg-navy-card/95 rounded-2xl border border-navy-border p-5 shadow-2xl backdrop-blur-md">
+    <div className="bg-navy-card/95 rounded-2xl border border-navy-border p-4 sm:p-5 shadow-2xl backdrop-blur-md">
       
       {/* Session Progress Bar */}
       {isSessionActive && !verdict && (
@@ -98,11 +98,11 @@ export const VerdictBar = ({
                 <CheckCircle className="w-6 h-6" />
               </div>
               <div>
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-base font-extrabold text-emerald-400">
+                <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                  <h3 className="text-sm sm:text-base font-extrabold text-emerald-400">
                     KYC VERIFIED — BIOMETRICALLY AUTHENTICATED
                   </h3>
-                  <span className="bg-emerald-950 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded-full border border-emerald-700">
+                  <span className="bg-emerald-950 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded-full border border-emerald-700 whitespace-nowrap">
                     {riskLevel} RISK
                   </span>
                 </div>
@@ -117,11 +117,11 @@ export const VerdictBar = ({
                 <AlertOctagon className="w-6 h-6" />
               </div>
               <div>
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-base font-extrabold text-mc-red">
+                <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                  <h3 className="text-sm sm:text-base font-extrabold text-mc-red">
                     VERIFICATION REJECTED — FRAUD DETECTED
                   </h3>
-                  <span className="bg-mc-red/20 text-mc-red text-[10px] font-mono px-2 py-0.5 rounded-full border border-mc-red/40">
+                  <span className="bg-mc-red/20 text-mc-red text-[10px] font-mono px-2 py-0.5 rounded-full border border-mc-red/40 whitespace-nowrap">
                     HIGH RISK
                   </span>
                 </div>
@@ -134,13 +134,13 @@ export const VerdictBar = ({
         </div>
 
         {/* Right Action Buttons */}
-        <div className="flex items-center space-x-3 w-full md:w-auto justify-end">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-stretch md:justify-end">
           {!isSessionActive && !verdict && (
             <button
               type="button"
               onClick={onStartSession}
               disabled={!hasID}
-              className={`px-6 py-3 rounded-xl font-bold font-mono text-sm flex items-center space-x-2 transition-all cursor-pointer shadow-xl ${
+              className={`w-full md:w-auto px-6 py-3 rounded-xl font-bold font-mono text-sm flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-xl ${
                 hasID 
                   ? 'bg-gradient-to-r from-mc-red via-mc-orange to-mc-amber text-white hover:opacity-95 hover:scale-[1.02] shadow-mc-red/30'
                   : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
@@ -155,7 +155,7 @@ export const VerdictBar = ({
               <button
                 type="button"
                 onClick={handleDownloadReport}
-                className="px-4 py-2.5 rounded-xl bg-navy-light hover:bg-navy-border text-white text-xs font-mono font-semibold border border-navy-border transition-all flex items-center space-x-2 cursor-pointer"
+                className="flex-1 md:flex-none justify-center px-4 py-2.5 rounded-xl bg-navy-light hover:bg-navy-border text-white text-xs font-mono font-semibold border border-navy-border transition-all flex items-center space-x-2 cursor-pointer"
               >
                 <Download className="w-4 h-4 text-mc-amber" />
                 <span>Download Audit Report</span>
@@ -164,7 +164,7 @@ export const VerdictBar = ({
               <button
                 type="button"
                 onClick={onRestart}
-                className="px-4 py-2.5 rounded-xl bg-navy-dark hover:bg-slate-800 text-slate-300 text-xs font-mono font-semibold border border-navy-border transition-all flex items-center space-x-2 cursor-pointer"
+                className="flex-1 md:flex-none justify-center px-4 py-2.5 rounded-xl bg-navy-dark hover:bg-slate-800 text-slate-300 text-xs font-mono font-semibold border border-navy-border transition-all flex items-center space-x-2 cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Start New Session</span>

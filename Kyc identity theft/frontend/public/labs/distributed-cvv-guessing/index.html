@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Defense Lab, CVV Enumeration</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #121826;
+    --panel2: #1a2130;
+    --line: #262f42;
+    --text: #e6ebf4;
+    --muted: #8a97ac;
+    --accent: #22d3ee;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; min-height: 100%; }
+
+  /* header */
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; font-weight: 650; letter-spacing: .2px; }
+  header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .status { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600;
+            padding: 5px 12px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--line); }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .status.live .dot { background: var(--green); animation: pulse 1.4s infinite; }
+  .status.blocked .dot { background: var(--red); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* controls */
+  .controls { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+              padding: 14px 16px; display: flex; gap: 14px 18px; align-items: flex-end; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .field select, .field input {
+    background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit;
+  }
+  .btn { border: 1px solid var(--line); background: var(--panel2); color: var(--text);
+         border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+         transition: background .15s, border-color .15s, opacity .15s; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #05222a; }
+  .btn.primary:hover { background: #38dcf0; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn:disabled:hover { border-color: var(--line); }
+  .spacer { flex: 1; }
+
+  /* who catches it */
+  .chain { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .chain h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px;
+              color: var(--muted); margin-bottom: 12px; }
+  .chain-row { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; }
+  .node { flex: 1; min-width: 150px; background: var(--panel2); border: 1px solid var(--line);
+          border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 5px; position: relative; }
+  .node.detects { border-color: var(--green); background: rgba(52,211,153,.07); }
+  .node.attacker { border-color: var(--red); background: rgba(248,113,113,.07); }
+  .node .role { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  .node .who { font-size: 13px; font-weight: 700; }
+  .node .sees { font-size: 11px; color: var(--muted); }
+  .node .tag { align-self: flex-start; margin-top: 2px; font-size: 9px; font-weight: 700;
+               text-transform: uppercase; letter-spacing: .4px; padding: 2px 6px; border-radius: 4px; }
+  .node .tag.blind { background: rgba(138,151,172,.16); color: var(--muted); }
+  .node .tag.catch { background: rgba(52,211,153,.18); color: var(--green); }
+  .arrow { align-self: center; color: var(--muted); font-size: 16px; flex: 0 0 auto; }
+  @media (max-width: 820px) { .arrow { display: none; } }
+
+  /* main grid */
+  .grid { display: grid; grid-template-columns: 1fr 380px; gap: 16px; align-items: start; }
+  @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .card > h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px;
+               color: var(--muted); padding: 12px 16px; border-bottom: 1px solid var(--line);
+               display: flex; justify-content: space-between; align-items: center; }
+
+  /* feed */
+  .feed-body { max-height: 460px; overflow-y: auto; }
+  table.feed { width: 100%; border-collapse: collapse; font-size: 12px;
+               font-family: ui-monospace, "Cascadia Code", monospace; }
+  table.feed th { position: sticky; top: 0; background: var(--panel); color: var(--muted);
+                  font-weight: 600; text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line);
+                  font-family: "Inter", system-ui, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+  table.feed td { padding: 7px 12px; border-bottom: 1px solid rgba(38,47,66,.5); }
+  table.feed tr:first-child td { animation: flash .6s ease-out; }
+  @keyframes flash { from { background: rgba(34,211,238,.12); } to { background: transparent; } }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+  .pill.m { background: rgba(52,211,153,.16); color: var(--green); }
+  .pill.n { background: rgba(251,191,36,.16); color: var(--amber); }
+  .pill.p { background: rgba(138,151,172,.16); color: var(--muted); }
+  .pill.pass { background: rgba(52,211,153,.16); color: var(--green); }
+  .pill.block { background: rgba(248,113,113,.16); color: var(--red); }
+  .empty { padding: 40px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* defense column */
+  .defense { display: flex; flex-direction: column; gap: 16px; }
+  .ring-wrap { padding: 20px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .ring { position: relative; width: 148px; height: 148px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .track { stroke: var(--line); }
+  .ring .prog { stroke: var(--amber); stroke-linecap: round; transition: stroke-dashoffset .4s ease, stroke .4s; }
+  .ring.blocked .prog { stroke: var(--red); }
+  .ring .center { position: absolute; inset: 0; display: flex; flex-direction: column;
+                  align-items: center; justify-content: center; }
+  .ring .center .num { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ring .center .of { font-size: 12px; color: var(--muted); }
+  .ring-label { font-size: 12px; color: var(--muted); text-align: center; }
+  .ring-label b { color: var(--text); font-family: ui-monospace, monospace; }
+  .ring-verdict { font-size: 13px; font-weight: 700; }
+  .ring-verdict.active { color: var(--amber); }
+  .ring-verdict.blocked { color: var(--red); }
+  .ring-verdict.idle { color: var(--muted); }
+
+  .stats { padding: 6px 16px 14px; }
+  .stat { display: flex; justify-content: space-between; align-items: baseline;
+          padding: 8px 0; border-bottom: 1px solid rgba(38,47,66,.5); font-size: 13px; }
+  .stat:last-child { border-bottom: none; }
+  .stat .k { color: var(--muted); }
+  .stat .v { font-weight: 700; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; }
+  .stat .v.amber { color: var(--amber); }
+  .stat .v.red { color: var(--red); }
+
+  .merchants { padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .merchant { background: var(--panel2); border: 1px solid var(--line); border-top-width: 3px;
+              border-radius: 8px; padding: 10px; text-align: center; }
+  .merchant.strict { border-top-color: var(--green); }
+  .merchant.moderate { border-top-color: var(--amber); }
+  .merchant.lax { border-top-color: var(--red); }
+  .merchant .mn { font-size: 12px; font-weight: 700; }
+  .merchant .mp { font-size: 10px; color: var(--muted); margin: 3px 0 6px; min-height: 26px; }
+  .merchant .mc { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .merchant .ml { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
+
+  /* log */
+  .log-body { max-height: 150px; overflow-y: auto; padding: 10px 16px; font-size: 12px;
+              font-family: ui-monospace, "Cascadia Code", monospace; }
+  .log-line { padding: 2px 0; color: var(--muted); }
+  .log-line.info { color: var(--text); }
+  .log-line.warn { color: var(--amber); }
+  .log-line.bad { color: var(--red); font-weight: 600; }
+  .log-line.good { color: var(--green); font-weight: 600; }
+
+  .riskbar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; margin: 4px 0 2px; }
+  .riskbar-fill { height: 100%; width: 0; background: var(--accent); transition: width .4s, background .4s; }
+  .riskbar-fill.hot { background: var(--red); }
+
+  .note { font-size: 11px; color: var(--muted); }
+  .note code { background: var(--panel2); padding: 1px 5px; border-radius: 4px;
+               font-family: ui-monospace, monospace; color: var(--text); }
+
+  /* read-more modal */
+  .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none;
+                align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 50;
+                overflow-y: auto; }
+  .modal-back.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+           max-width: 760px; width: 100%; padding: 0; }
+  .modal header { padding: 16px 20px; border-bottom: 1px solid var(--line);
+                  display: flex; justify-content: space-between; align-items: center; }
+  .modal header h2 { font-size: 15px; font-weight: 650; }
+  .modal .body { padding: 4px 20px 20px; }
+  .modal h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+              color: var(--accent); margin: 20px 0 8px; }
+  .modal h4 { font-size: 13px; margin: 14px 0 4px; color: var(--text); }
+  .modal p, .modal li { font-size: 13px; color: var(--muted); margin: 6px 0; line-height: 1.55; }
+  .modal li { margin: 4px 0; }
+  .modal ul { padding-left: 18px; }
+  .modal b { color: var(--text); }
+  .modal code { background: var(--panel2); padding: 1px 5px; border-radius: 4px;
+                font-family: ui-monospace, monospace; color: var(--text); font-size: 12px; }
+  .modal .close { cursor: pointer; border: 1px solid var(--line); background: var(--panel2);
+                  color: var(--text); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+  .modal .close:hover { border-color: var(--accent); }
+  .modal .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .modal .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>AI Defense Lab, CVV Enumeration</h1>
+      <div class="sub">Mastercard Innovation Challenge 2026. Distributed guessing attack vs. centralized PAN velocity block.</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" id="btnReadMore">Read more</button>
+      <div class="status" id="status"><span class="dot"></span><span id="statusText">Idle</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="field">
+      <label for="card">Target card</label>
+      <select id="card"></select>
+    </div>
+    <div class="field">
+      <label for="mode">Strategy</label>
+      <select id="mode">
+        <option value="common_first">Common CVVs first</option>
+        <option value="random">Random order</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="speed">Speed</label>
+      <select id="speed">
+        <option value="250">Fast</option>
+        <option value="700" selected>Normal</option>
+        <option value="1600">Slow</option>
+      </select>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn primary" id="btnStart">Start attack</button>
+    <button class="btn" id="btnStop" disabled>Stop</button>
+    <button class="btn" id="btnReset">Reset view</button>
+  </div>
+
+  <div class="chain">
+    <h2>Who catches it</h2>
+    <div class="chain-row">
+      <div class="node attacker">
+        <span class="role">Level 0</span>
+        <span class="who">Attacker</span>
+        <span class="sees">Splits CVV guesses across many merchants to stay under each one's radar.</span>
+      </div>
+      <span class="arrow">&gt;</span>
+      <div class="node">
+        <span class="role">Level 1</span>
+        <span class="who">Merchant</span>
+        <span class="sees">Sees only its own 3 to 5 failed tries. Below its own rate limit.</span>
+        <span class="tag blind">No cross-merchant view</span>
+      </div>
+      <span class="arrow">&gt;</span>
+      <div class="node">
+        <span class="role">Level 2</span>
+        <span class="who">Payment processor / acquirer</span>
+        <span class="sees">Forwards the auth request. Does not aggregate failures per card.</span>
+        <span class="tag blind">Passes through</span>
+      </div>
+      <span class="arrow">&gt;</span>
+      <div class="node">
+        <span class="role">Level 3</span>
+        <span class="who">Card network</span>
+        <span class="sees">Routes to the issuer. Mastercard runs a central check here, Visa historically did not.</span>
+        <span class="tag blind">Depends on network</span>
+      </div>
+      <span class="arrow">&gt;</span>
+      <div class="node detects">
+        <span class="role">Level 4</span>
+        <span class="who">Issuer bank</span>
+        <span class="sees">The only entity that validates the CVV and counts every mismatch on the PAN across all merchants.</span>
+        <span class="tag catch">Catches it, blocks the card</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>Transaction feed <span id="feedCount">0 attempts</span></h2>
+      <div class="feed-body">
+        <table class="feed">
+          <thead>
+            <tr><th>Time</th><th>Merchant</th><th>CVV</th><th>Issuer</th><th>CVV code</th><th>Amount</th><th>Merchant call</th></tr>
+          </thead>
+          <tbody id="feed">
+            <tr><td colspan="7" class="empty">No traffic yet. Pick a card and start the attack.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="defense">
+
+      <div class="card">
+        <h2>Issuer defense, PAN velocity</h2>
+        <div class="ring-wrap">
+          <div class="ring" id="ring">
+            <svg width="148" height="148" viewBox="0 0 148 148">
+              <circle class="track" cx="74" cy="74" r="62" fill="none" stroke-width="12"></circle>
+              <circle class="prog"  cx="74" cy="74" r="62" fill="none" stroke-width="12"
+                      stroke-dasharray="389.6" stroke-dashoffset="389.6" id="ringProg"></circle>
+            </svg>
+            <div class="center"><span class="num" id="ringNum">0</span><span class="of">of 5</span></div>
+          </div>
+          <div class="ring-label">CVV mismatches on <b id="ringPan">no card</b></div>
+          <div class="ring-verdict idle" id="ringVerdict">Card active</div>
+        </div>
+        <div class="stats" style="padding-top:0">
+          <div class="stat">
+            <span class="k">Layer 2 risk score</span>
+            <span class="v" id="riskVal">n/a</span>
+          </div>
+          <div class="riskbar"><div class="riskbar-fill" id="riskFill"></div></div>
+          <div class="note" style="padding:6px 0 0">
+            ML model (slow-and-low detector). Blocks at
+            <b id="riskCut">0.86</b> even before 5 mismatches.
+          </div>
+          <div class="stat" id="reasonRow" style="display:none">
+            <span class="k">Blocked by</span>
+            <span class="v red" id="blockReason">--</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Session totals</h2>
+        <div class="stats">
+          <div class="stat"><span class="k">Total attempts</span><span class="v" id="sTotal">0</span></div>
+          <div class="stat"><span class="k">CVV mismatch (N)</span><span class="v" id="sN">0</span></div>
+          <div class="stat"><span class="k">CVV match (M)</span><span class="v" id="sM">0</span></div>
+          <div class="stat"><span class="k">Distinct merchants used</span><span class="v" id="sMerch">0</span></div>
+          <div class="stat"><span class="k">Passed at lax merchant despite N</span><span class="v amber" id="sLax">0</span></div>
+          <div class="stat"><span class="k">Cards blocked by issuer</span><span class="v red" id="sBlocked">0</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Merchant posture</h2>
+        <div class="merchants">
+          <div class="merchant strict">
+            <div class="mn">Merchant A</div>
+            <div class="mp">Strict. Rejects any CVV that is not M.</div>
+            <div class="mc" id="mA">0</div><div class="ml">rejected</div>
+          </div>
+          <div class="merchant moderate">
+            <div class="mn">Merchant B</div>
+            <div class="mp">Moderate. Rejects N only if amount &gt; $50.</div>
+            <div class="mc" id="mB">0</div><div class="ml">rejected</div>
+          </div>
+          <div class="merchant lax">
+            <div class="mn">Merchant C</div>
+            <div class="mp">Lax. Ignores the CVV result code.</div>
+            <div class="mc" id="mC">0</div><div class="ml">let through</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Event log</h2>
+    <div class="log-body" id="log"></div>
+  </div>
+
+  <div class="note">
+    Calls the live public Lambda Function URL directly. Card state (counters, blocks) persists in DynamoDB.
+    Run <code>python reset_cards.py</code> to clear it between demos. <b>Reset view</b> only clears this page.
+  </div>
+
+</div>
+
+<div class="modal-back" id="modalBack">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="How this works">
+    <header>
+      <h2>How this works &mdash; red team, blue team, and the simulation</h2>
+      <button class="close" id="modalClose">Close</button>
+    </header>
+    <div class="body">
+
+      <p>This is a closed-loop attack/defense simulation of a <b>distributed CVV
+      enumeration attack</b> on card-payment infrastructure. Everything runs on
+      synthetic data in a sandboxed AWS account. No real cards, banks, merchants
+      or payment networks are touched.</p>
+
+      <h3>The vulnerability being modelled</h3>
+      <p>When a card is authorized, only the <b>issuing bank</b> checks the CVV.
+      It returns two independent signals to the merchant: an
+      <b>authorization decision</b> (approved / declined, based on funds) and a
+      separate <b>CVV result code</b> per ISO&nbsp;8583 &mdash;
+      <code>M</code> match, <code>N</code> no match, <code>P</code> not processed.
+      Some merchants ignore the <code>N</code>. If the bank approves the funds and
+      flags <code>N</code>, a lax merchant lets the charge through anyway. That is
+      the gap the attacker exploits.</p>
+      <p>No single merchant sees enough failed guesses to notice (3&ndash;5 each,
+      under any local rate limit). Only the issuer, counting mismatches per card
+      <i>across all merchants</i>, sees the whole attack. Grounded in Ali et al.,
+      <i>&ldquo;Does the Online Card Payment Landscape Unwittingly Facilitate
+      Fraud?&rdquo;</i> (IEEE S&amp;P 2017).</p>
+
+      <div class="cols">
+        <div>
+          <h3>Red team &mdash; the attacker</h3>
+          <p>Has a list of stolen card numbers + expiry dates, but <b>not</b> the
+          CVVs. Goal: recover a CVV without getting the card blocked.</p>
+          <h4>Technique</h4>
+          <ul>
+            <li><b>Distribute</b> guesses across merchant A / B / C so each
+              merchant sees only a few failures.</li>
+            <li><b>Stay slow-and-low</b>: keep mismatches per card under the
+              issuer's velocity threshold (5).</li>
+            <li><b>Profile merchants</b> from the two-part response &mdash; find
+              which ones accept a charge despite a <code>N</code> code (merchant C
+              here) and concentrate there.</li>
+            <li><b>Shape controllable features</b>: small &ldquo;does it
+              authorize&rdquo; amounts, varied timing, merchant rotation &mdash;
+              per Lunghi et al., FRAUD-RLA (arXiv 2502.02290, 2025).</li>
+          </ul>
+          <h4>In this demo</h4>
+          <p>The browser loops CVV <code>000&rarr;999</code> (common values
+          first, or random) and sends
+          <code>POST {pan, expiry, cvv, merchant_id, amount}</code> to the public
+          issuer Lambda URL. The batch/agent version lives in
+          <code>sim/attacker_agent.py</code>, with an optional Gemini&nbsp;2.5
+          Flash mode that authors a fresh strategy per session (clamped to safe
+          bounds).</p>
+        </div>
+        <div>
+          <h3>Blue team &mdash; the issuer</h3>
+          <h4>Layer 1 &mdash; centralized velocity (deterministic)</h4>
+          <ul>
+            <li>Every CVV mismatch atomically increments
+              <code>cvvFailedAttempts</code> on the card in DynamoDB, regardless
+              of which merchant sent it.</li>
+            <li>DynamoDB Streams trigger a mitigation Lambda; at
+              <b>5 mismatches</b> the card is set <code>BLOCKED</code> and all
+              further auths decline. This is the architecture Mastercard runs in
+              production.</li>
+          </ul>
+          <h4>Layer 2 &mdash; behavioural ML (catches slow-and-low)</h4>
+          <ul>
+            <li>Every auth event is logged to a second table. A scoring Lambda
+              recomputes, per card, <b>rolling 1h / 24h / 7d features</b>:
+              mismatch rate, merchant fan-out and entropy, small-amount fraction,
+              decline rate, &ldquo;approved-but-<code>N</code>&rdquo; fraction,
+              inter-attempt timing, session bursts, a merchant historical
+              <code>N</code>-rate, and an IsolationForest anomaly score.</li>
+            <li>A <b>LightGBM</b> model scores that vector to a
+              <code>risk_score</code> (0&ndash;1), written back onto the card.</li>
+            <li>The mitigation Lambda blocks on
+              <code>cvvFailedAttempts &ge; 5 <b>OR</b> risk_score &ge; 0.86</code>,
+              tagging <code>block_reason</code> as
+              <code>threshold</code> or <code>model</code>.</li>
+            <li>Feature families follow Whitrow&nbsp;2009 and Bahnsen&nbsp;2016;
+              imbalance handling and time-ordered AUC-PR / Precision@k evaluation
+              follow Dal&nbsp;Pozzolo&nbsp;2018 and Davis&nbsp;&amp;&nbsp;Goadrich&nbsp;2006;
+              the hybrid anomaly feature follows Carcillo&nbsp;2021.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>How the simulation is built</h3>
+      <ul>
+        <li><b>Cards</b>: ~30 synthetic, Luhn-valid PANs with real test BIN
+          prefixes, random CVVs and expiries, seeded into DynamoDB
+          (<code>MockIssuerDB</code>). ~35% are &ldquo;dead&rdquo; (no funds) to
+          match real stolen-dump characteristics. The attacker never sees the
+          CVV column.</li>
+        <li><b>Issuer</b>: a Python Lambda behind a public Function URL. Checks
+          PAN + expiry + CVV, returns the ISO&nbsp;8583-style two-part response,
+          increments the mismatch counter. A local mirror
+          (<code>sim/mock_gateway.py</code>) runs the identical logic offline for
+          training-data generation.</li>
+        <li><b>Merchant posture</b> (strict / moderate / lax) is applied
+          client-side, in this page &mdash; the issuer is posture-agnostic, just
+          like real life.</li>
+        <li><b>Model training</b>: a benign-traffic generator and an
+          attack-campaign generator run against the local mirror to produce a
+          labelled event log; the model is trained and evaluated offline
+          (<code>ml/</code>), then the exact same feature code is packaged into
+          the scoring Lambda so offline and online scores cannot diverge.</li>
+        <li><b>Safety</b>: one sandboxed AWS account, Lambda concurrency capped,
+          a $1 budget alarm, synthetic data only.</li>
+      </ul>
+
+    </div>
+  </div>
+</div>
+
+<script src="config.js" onerror="void 0"></script>
+<script>
+// The live issuer endpoint is not committed. Set it in a local config.js
+// (copy config.example.js) or pass ?api=<url> in the page URL.
+const DEFAULT_API = "https://YOUR-FUNCTION-URL.lambda-url.us-east-1.on.aws/";
+const LAMBDA_URL =
+  new URLSearchParams(location.search).get("api") ||
+  (typeof window.CARDING_API_URL === "string" && window.CARDING_API_URL) ||
+  DEFAULT_API;
+const BLOCK_THRESHOLD = 5;
+const RISK_CUTOFF = 0.86; // keep in sync with the mitigation Lambda's RISK_CUTOFF env
+const RING_CIRC = 389.6; // 2 * pi * 62
+
+// attacker's view: PAN + expiry only, no CVV (from attacker_card_list.csv)
+const CARDS = [
+  { pan: "5300003472283092", m: 4,  y: 2028 },
+  { pan: "4242426162259243", m: 1,  y: 2027 },
+  { pan: "4000003644510436", m: 5,  y: 2026 },
+  { pan: "5100000727650648", m: 5,  y: 2029 },
+  { pan: "4242422412723377", m: 2,  y: 2026 },
+  { pan: "4111113399706505", m: 8,  y: 2025 },
+  { pan: "5200008697541969", m: 3,  y: 2026 },
+  { pan: "4000003671601769", m: 7,  y: 2027 },
+  { pan: "4242427076679757", m: 10, y: 2028 },
+  { pan: "5300008235725016", m: 12, y: 2029 },
+];
+
+const MERCHANTS = [
+  { id: "merchant_a", name: "A", posture: "strict" },
+  { id: "merchant_b", name: "B", posture: "moderate" },
+  { id: "merchant_c", name: "C", posture: "lax" },
+];
+
+const COMMON_CVVS = ["123","000","111","999","007","420","666","321","777","888","555","333","100","200","500"];
+
+let timer = null;
+let queue = [];
+let qi = 0;
+let target = null;
+let s = { total: 0, n: 0, m: 0, lax: 0, blocked: 0, merchants: new Set() };
+let mReject = { A: 0, B: 0, C: 0 };
+let ringCount = 0;
+let cardBlocked = false;
+let riskScore = null;
+
+const $ = (id) => document.getElementById(id);
+const shortPan = (p) => p.slice(0, 6) + " " + p.slice(-4);
+
+function buildQueue(mode) {
+  const all = [];
+  for (let i = 0; i < 1000; i++) all.push(String(i).padStart(3, "0"));
+  if (mode === "random") {
+    for (let i = all.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [all[i], all[j]] = [all[j], all[i]];
+    }
+    return all;
+  }
+  // common_first
+  const rest = all.filter((c) => !COMMON_CVVS.includes(c));
+  return [...COMMON_CVVS, ...rest];
+}
+
+function amountFor(posture) {
+  if (posture === "moderate") {
+    return Math.random() > 0.5
+      ? +(Math.random() * 30 + 5).toFixed(2)
+      : +(Math.random() * 90 + 60).toFixed(2);
+  }
+  return +(Math.random() * 40 + 2).toFixed(2);
+}
+
+function merchantCall(posture, r) {
+  if (r.auth_decision === "declined") return { pass: false, kind: "issuer_declined" };
+  if (r.cvv_result === "M") return { pass: true, kind: "cvv_match" };
+  // cvv_result === "N"
+  if (posture === "strict") return { pass: false, kind: "rejected_cvv_n" };
+  if (posture === "moderate") {
+    return (r.amount || 0) > 50
+      ? { pass: false, kind: "rejected_high_value" }
+      : { pass: true, kind: "allowed_low_value" };
+  }
+  return { pass: true, kind: "ignored_cvv" }; // lax
+}
+
+function setStatus(text, cls) {
+  $("statusText").textContent = text;
+  $("status").className = "status" + (cls ? " " + cls : "");
+}
+
+function log(text, cls = "") {
+  const line = document.createElement("div");
+  line.className = "log-line " + cls;
+  line.textContent = "[" + new Date().toLocaleTimeString() + "] " + text;
+  $("log").insertBefore(line, $("log").firstChild);
+  while ($("log").children.length > 60) $("log").removeChild($("log").lastChild);
+}
+
+function renderRing() {
+  const frac = Math.min(ringCount / BLOCK_THRESHOLD, 1);
+  $("ringProg").setAttribute("stroke-dashoffset", RING_CIRC * (1 - frac));
+  $("ringNum").textContent = ringCount;
+  $("ring").classList.toggle("blocked", cardBlocked);
+  const v = $("ringVerdict");
+  if (cardBlocked) { v.textContent = "CARD BLOCKED"; v.className = "ring-verdict blocked"; }
+  else if (ringCount > 0) { v.textContent = "Velocity rising"; v.className = "ring-verdict active"; }
+  else { v.textContent = "Card active"; v.className = "ring-verdict idle"; }
+}
+
+function renderRisk() {
+  $("riskCut").textContent = RISK_CUTOFF.toFixed(2);
+  const el = $("riskVal"), fill = $("riskFill");
+  if (riskScore == null) {
+    el.textContent = "n/a"; fill.style.width = "0"; fill.classList.remove("hot");
+    return;
+  }
+  el.textContent = riskScore.toFixed(3);
+  fill.style.width = Math.min(riskScore * 100, 100) + "%";
+  fill.classList.toggle("hot", riskScore >= RISK_CUTOFF);
+}
+
+function renderStats() {
+  $("sTotal").textContent = s.total;
+  $("sN").textContent = s.n;
+  $("sM").textContent = s.m;
+  $("sMerch").textContent = s.merchants.size;
+  $("sLax").textContent = s.lax;
+  $("sBlocked").textContent = s.blocked;
+  $("mA").textContent = mReject.A;
+  $("mB").textContent = mReject.B;
+  $("mC").textContent = mReject.C;
+  $("feedCount").textContent = s.total + " attempts";
+}
+
+function addRow(merchant, cvv, r, call) {
+  const feed = $("feed");
+  if (feed.children.length === 1 && feed.children[0].querySelector(".empty")) feed.innerHTML = "";
+  const tr = document.createElement("tr");
+  const code = r.cvv_result || "P";
+  const auth = r.auth_decision || "error";
+  const amt = r.amount != null ? "$" + Number(r.amount).toFixed(2) : "n/a";
+  tr.innerHTML =
+    "<td>" + new Date().toLocaleTimeString() + "</td>" +
+    "<td>" + merchant.name + " / " + merchant.posture + "</td>" +
+    "<td>" + cvv + "</td>" +
+    "<td>" + auth + "</td>" +
+    "<td><span class='pill " + code.toLowerCase() + "'>" + code + "</span></td>" +
+    "<td>" + amt + "</td>" +
+    "<td><span class='pill " + (call.pass ? "pass" : "block") + "'>" + (call.pass ? "ACCEPTED" : "REJECTED") + "</span></td>";
+  feed.insertBefore(tr, feed.firstChild);
+  while (feed.children.length > 60) feed.removeChild(feed.lastChild);
+}
+
+async function tick() {
+  if (qi >= queue.length) { stop(); log("CVV space exhausted", "warn"); return; }
+  const cvv = queue[qi++];
+  const merchant = MERCHANTS[Math.floor(Math.random() * MERCHANTS.length)];
+  const amount = amountFor(merchant.posture);
+
+  let r;
+  try {
+    const res = await fetch(LAMBDA_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pan: target.pan, expiry_month: target.m, expiry_year: target.y,
+        cvv, merchant_id: merchant.id, amount,
+      }),
+    });
+    r = await res.json();
+  } catch (e) {
+    log("Request failed: " + e.message, "bad");
+    return;
+  }
+
+  const call = merchantCall(merchant.posture, r);
+  s.total++;
+  s.merchants.add(merchant.id);
+  if (r.cvv_result === "N") s.n++;
+  if (r.cvv_result === "M") s.m++;
+  if (!call.pass && (call.kind === "rejected_cvv_n" || call.kind === "rejected_high_value")) mReject[merchant.name]++;
+
+  if (typeof r.cvvFailedAttempts === "number") ringCount = r.cvvFailedAttempts;
+  if (typeof r.risk_score === "number") { riskScore = r.risk_score; renderRisk(); }
+
+  if (call.pass && r.cvv_result === "N") {
+    s.lax++;
+    log("Merchant " + merchant.name + " (" + merchant.posture + ") accepted a CVV mismatch charge of $" + Number(amount).toFixed(2), "warn");
+  }
+  if (r.cvv_result === "M") {
+    log("CVV cracked: " + cvv + ". Card fully compromised at merchant " + merchant.name + ".", "bad");
+    addRow(merchant, cvv, r, call); renderStats(); renderRing();
+    stop(); return;
+  }
+  if (r.pan_status === "BLOCKED" && !cardBlocked) {
+    cardBlocked = true;
+    s.blocked++;
+    ringCount = r.cvvFailedAttempts || ringCount;
+    const reason = r.block_reason || "threshold";
+    $("reasonRow").style.display = "";
+    $("blockReason").textContent = reason === "model" ? "Layer 2 (ML model)" : "Layer 1 (velocity threshold)";
+    if (reason === "model")
+      log("Layer 2 blocked " + shortPan(target.pan) + " on risk score " + (riskScore != null ? riskScore.toFixed(3) : "n/a") + ", before 5 mismatches. Slow-and-low caught.", "good");
+    else
+      log("Issuer blocked " + shortPan(target.pan) + " after " + ringCount + " mismatches. Every further attempt now declines.", "good");
+    addRow(merchant, cvv, r, call); renderStats(); renderRing();
+    setStatus("Card blocked", "blocked");
+    stop(true); return;
+  }
+
+  addRow(merchant, cvv, r, call);
+  renderStats();
+  renderRing();
+}
+
+function start() {
+  if (!LAMBDA_URL || LAMBDA_URL === DEFAULT_API) {
+    log("No issuer endpoint set. Add a local config.js (copy config.example.js) or open this page with ?api=<your-function-url>.", "bad");
+    return;
+  }
+  target = JSON.parse($("card").value);
+  queue = buildQueue($("mode").value);
+  qi = 0;
+  s = { total: 0, n: 0, m: 0, lax: 0, blocked: 0, merchants: new Set() };
+  mReject = { A: 0, B: 0, C: 0 };
+  ringCount = 0;
+  cardBlocked = false;
+  riskScore = null;
+  $("reasonRow").style.display = "none";
+  $("ringPan").textContent = shortPan(target.pan);
+  $("feed").innerHTML = "";
+  renderStats();
+  renderRing();
+  renderRisk();
+  $("btnStart").disabled = true;
+  $("btnStop").disabled = false;
+  setStatus("Attacking", "live");
+  log("Attack started. Strategy " + $("mode").value + ", target " + shortPan(target.pan) + ".", "info");
+  timer = setInterval(tick, parseInt($("speed").value, 10));
+}
+
+function stop(keepStatus) {
+  clearInterval(timer);
+  timer = null;
+  $("btnStart").disabled = false;
+  $("btnStop").disabled = true;
+  if (!keepStatus) setStatus("Stopped");
+}
+
+function resetView() {
+  stop();
+  s = { total: 0, n: 0, m: 0, lax: 0, blocked: 0, merchants: new Set() };
+  mReject = { A: 0, B: 0, C: 0 };
+  ringCount = 0;
+  cardBlocked = false;
+  queue = []; qi = 0;
+  riskScore = null;
+  $("reasonRow").style.display = "none";
+  $("feed").innerHTML = "<tr><td colspan='7' class='empty'>No traffic yet. Pick a card and start the attack.</td></tr>";
+  $("log").innerHTML = "";
+  $("ringPan").textContent = "no card";
+  renderStats();
+  renderRing();
+  renderRisk();
+  setStatus("Idle");
+  log("View reset. Card state in DynamoDB is unchanged. Run reset_cards.py for a full reset.", "");
+}
+
+function initCards() {
+  const sel = $("card");
+  CARDS.forEach((c) => {
+    const o = document.createElement("option");
+    o.value = JSON.stringify(c);
+    o.textContent = shortPan(c.pan) + ", exp " + String(c.m).padStart(2, "0") + "/" + c.y;
+    sel.appendChild(o);
+  });
+}
+
+$("btnStart").addEventListener("click", start);
+$("btnStop").addEventListener("click", () => stop());
+$("btnReset").addEventListener("click", resetView);
+
+const modal = $("modalBack");
+$("btnReadMore").addEventListener("click", () => modal.classList.add("open"));
+$("modalClose").addEventListener("click", () => modal.classList.remove("open"));
+modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("open"); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") modal.classList.remove("open"); });
+
+initCards();
+renderRing();
+renderRisk();
+renderStats();
+log("Ready. Pick a target card and click Start attack.", "");
+</script>
+</body>
+</html>

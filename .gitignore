@@ -34,3 +34,6 @@ Thumbs.db
 
 # Local Claude Code permission rules (personal, not for the repo)
 .claude/settings.local.json
+
+# Copied lab config carrying a real deployed endpoint — never commit
+Kyc identity theft/frontend/public/labs/distributed-cvv-guessing/config.js

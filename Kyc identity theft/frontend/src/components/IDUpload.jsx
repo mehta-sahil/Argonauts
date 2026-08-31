@@ -27,8 +27,11 @@ export const IDUpload = ({ onIDUploaded, isSessionActive }) => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const host = window.location.hostname || 'localhost';
-      const response = await fetch(`http://${host}:8000/api/upload-id`, {
+      // Same-origin relative path. In dev, Vite proxies /api to the backend
+      // (see vite.config.js); in production CloudFront routes /api/* to the ALB.
+      // VITE_API_BASE can point at a backend on another origin if needed.
+      const apiBase = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+      const response = await fetch(`${apiBase}/api/upload-id`, {
         method: 'POST',
         body: formData,
       });
@@ -134,9 +137,9 @@ export const IDUpload = ({ onIDUploaded, isSessionActive }) => {
   };
 
   return (
-    <div className="bg-navy-card/90 rounded-2xl border border-navy-border p-6 shadow-2xl backdrop-blur-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2.5">
+    <div className="bg-navy-card/90 rounded-2xl border border-navy-border p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+        <div className="flex items-center space-x-2.5 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-mc-red/10 border border-mc-red/30 flex items-center justify-center text-mc-red font-mono font-bold text-sm">
             01
           </div>
@@ -170,7 +173,7 @@ export const IDUpload = ({ onIDUploaded, isSessionActive }) => {
             }
           }}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[220px] ${
+          className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[200px] sm:min-h-[220px] ${
             isDragging 
               ? 'border-mc-amber bg-mc-amber/10 scale-[1.01]' 
               : 'border-navy-border hover:border-slate-500 bg-navy-dark/60 hover:bg-navy-light/40'

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Push-Payment Scams</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" onerror="void 0"></script>
+<script src="demo_data.js" onerror="void 0"></script>
+<style>
+  :root{
+    --bg:#0B0C16; --panel:#12131F; --panel2:#171826; --line:rgba(255,255,255,.08);
+    --text:#e6ebf4; --muted:#8a93a6; --red:#f87171; --green:#34d399; --amber:#fbbf24;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Inter","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);
+       font-size:14px;line-height:1.5;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+  /* --- minimal top bar --- */
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;
+         padding:14px 22px;border-bottom:1px solid var(--line);}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0;}
+  .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;
+        font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;transition:.15s;}
+  .back:hover{color:var(--text);background:var(--panel);}
+  header h1{font-size:15px;font-weight:600;letter-spacing:-.01em;}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
+       border:1px solid var(--line);border-radius:999px;padding:4px 10px;}
+  .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+
+  .main{flex:1;display:flex;min-height:0;}
+  .center{flex:1;display:flex;flex-direction:column;min-width:0;padding:18px 22px;gap:14px;overflow:hidden;}
+  .side{width:320px;border-left:1px solid var(--line);background:var(--panel);padding:18px;
+        overflow-y:auto;display:flex;flex-direction:column;gap:22px;}
+
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  select,button{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+        border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;}
+  button{cursor:pointer;font-weight:600;transition:.15s;}
+  button:hover{border-color:rgba(255,255,255,.25);}
+  button.primary{background:var(--text);border-color:var(--text);color:#0B0C16;}
+  button.primary:hover{opacity:.9;}
+
+  .gauge-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .gauge-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;
+        display:flex;justify-content:space-between;}
+  .gauge-track{height:8px;border-radius:5px;background:var(--panel2);margin-top:8px;position:relative;overflow:hidden;}
+  .gauge-fill{height:100%;width:0;background:var(--green);transition:width .3s,background .3s;}
+  .gauge-thresh{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--text);opacity:.4;}
+
+  .chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px;}
+  .msg{max-width:74%;padding:10px 13px;border-radius:12px;font-size:13px;position:relative;}
+  .msg.them{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);}
+  .msg.me{align-self:flex-end;background:#15233a;border:1px solid rgba(56,189,248,.25);}
+  .msg .who{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+  .msg .chips{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;}
+  .chip{font-size:9px;background:rgba(248,113,113,.16);color:var(--red);padding:2px 6px;border-radius:4px;
+        text-transform:uppercase;letter-spacing:.3px;}
+  .msg .sc{position:absolute;right:9px;top:9px;font-size:10px;color:var(--muted);font-family:ui-monospace,monospace;}
+
+  .guard{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--panel);}
+  .guard h3{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px;}
+  .guard .verdict{font-size:14px;font-weight:700;padding:5px 11px;border-radius:6px;display:inline-block;}
+  .verdict.allow{background:rgba(52,211,153,.16);color:var(--green);}
+  .verdict.warn{background:rgba(251,191,36,.16);color:var(--amber);}
+  .verdict.hold,.verdict.block{background:rgba(248,113,113,.18);color:var(--red);}
+  .pf{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font-size:12px;color:var(--muted);margin-top:10px;
+      font-family:ui-monospace,monospace;}
+  .pf b{color:var(--text);font-weight:600;}
+
+  h2{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:10px;}
+  .metric{display:flex;justify-content:space-between;gap:12px;padding:6px 0;
+          border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;}
+  .metric:last-child{border-bottom:none;}
+  .metric span:first-child{color:var(--muted);}
+  .metric .v{font-weight:700;font-family:ui-monospace,monospace;}
+  .metric .v.good{color:var(--green);}
+  .empty{padding:48px;color:var(--muted);text-align:center;}
+  code{background:var(--panel2);padding:2px 5px;border-radius:4px;font-family:ui-monospace,monospace;font-size:12px;}
+  .cap{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px;}
+  .axis text{fill:var(--muted);font-size:10px;}
+  .axis path,.axis line{stroke:var(--line);}
+
+  /* live input */
+  .live{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--panel);}
+  .live-h{font-size:12px;color:var(--muted);margin-bottom:9px;}
+  .live textarea{width:100%;resize:none;height:58px;background:var(--panel2);border:1px solid var(--line);
+      border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:9px 11px;}
+  .live-row{display:flex;align-items:center;gap:12px;margin-top:9px;flex-wrap:wrap;}
+  .live-out{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);}
+  .live-score{font-family:ui-monospace,monospace;font-weight:700;font-size:15px;}
+  .live-badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+      padding:3px 9px;border-radius:6px;}
+  .live-badge.scam{background:rgba(248,113,113,.18);color:var(--red);}
+  .live-badge.ok{background:rgba(52,211,153,.16);color:var(--green);}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <a class="back" href="/#simulations">← All simulations</a>
+    <h1>Push-Payment Scams</h1>
+  </div>
+  <span class="tag"><span class="dot"></span> scam-intent model + payment guard</span>
+</header>
+
+<div class="main">
+  <div class="center" id="center">
+    <div class="live">
+      <div class="live-h">Try it live — type a message the sender might send, and the real model scores it.</div>
+      <textarea id="liveIn" placeholder="e.g. This is your bank's fraud team. Your account is compromised — move your balance to this safe account now, and don't tell anyone."></textarea>
+      <div class="live-row">
+        <button class="primary" id="liveBtn">Analyze</button>
+        <div class="live-out" id="liveOut"><span style="color:var(--muted)">Live scam-intent model · trained on startup</span></div>
+      </div>
+    </div>
+    <div class="controls">
+      <select id="pick"></select>
+      <button class="primary" id="play">Play</button>
+      <button id="step">Step</button>
+      <button id="reset">Reset</button>
+    </div>
+    <div class="gauge-wrap">
+      <div class="gauge-label"><span>conversation scam score</span><span id="gval">0.00</span></div>
+      <div class="gauge-track"><div class="gauge-fill" id="gfill"></div><div class="gauge-thresh" id="gthr"></div></div>
+    </div>
+    <div class="chat" id="chat"><div class="empty" id="noData">Run <code>python run.py</code> then reload.</div></div>
+    <div id="guardSlot"></div>
+  </div>
+  <div class="side" id="side"></div>
+</div>
+
+<script>
+// --- live model call (Docker container via /pp-api proxy) ---
+const liveOut = document.getElementById("liveOut");
+const liveBtn = document.getElementById("liveBtn");
+const liveIn = document.getElementById("liveIn");
+async function analyzeLive(){
+  const text = liveIn.value.trim();
+  if(!text){ liveIn.focus(); return; }
+  liveOut.innerHTML = '<span style="color:var(--muted)">scoring…</span>';
+  try{
+    const r = await fetch("/pp-api/api/score", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
+    const d = await r.json();
+    const pct = Math.round(d.score*100);
+    const cls = d.flagged ? "scam" : "ok";
+    const chips = (d.fired||[]).map(f=>`<span class="chip">${f.replace(/_/g," ")}</span>`).join("");
+    liveOut.innerHTML =
+      `<span class="live-score" style="color:${d.flagged?'var(--red)':'var(--green)'}">${d.score.toFixed(2)}</span>`+
+      `<span class="live-badge ${cls}">${d.flagged?'scam intent':'looks legit'}</span>`+
+      `<span style="display:flex;gap:4px;flex-wrap:wrap">${chips}</span>`;
+  }catch(e){
+    liveOut.innerHTML = '<span style="color:var(--red)">model offline — start the container</span>';
+  }
+}
+liveBtn.onclick = analyzeLive;
+liveIn.addEventListener("keydown", e=>{ if((e.metaKey||e.ctrlKey)&&e.key==="Enter") analyzeLive(); });
+
+const DEMO = window.DEMO;
+if (DEMO) build();
+
+function build(){
+  document.getElementById("noData")?.remove();
+  const pick = document.getElementById("pick");
+  DEMO.conversations.forEach((c,i)=>{
+    const o=document.createElement("option");
+    o.value=i;
+    const tag=c.label==="scam"?(c.intensity==="camouflaged"?"camouflaged scam":"scam"):"legit";
+    o.textContent=`${tag} · ${c.archetype.replace(/_/g," ")}`;
+    pick.appendChild(o);
+  });
+  sidebar();
+  let cur=Math.max(0,DEMO.conversations.findIndex(c=>c.label==="scam"&&c.intensity!=="camouflaged"));
+  pick.value=cur;
+  let shown=0, timer=null;
+  const chat=document.getElementById("chat");
+  const gfill=document.getElementById("gfill"), gval=document.getElementById("gval");
+  document.getElementById("gthr").style.left=(DEMO.flag_threshold*100)+"%";
+
+  function reset(){
+    clearInterval(timer);timer=null;shown=0;chat.innerHTML="";
+    document.getElementById("guardSlot").innerHTML="";
+    gfill.style.width="0";gfill.style.background="var(--green)";gval.textContent="0.00";
+  }
+  function stepOne(){
+    const c=DEMO.conversations[cur];
+    if(shown>=c.turns.length){clearInterval(timer);timer=null;showGuard(c);return;}
+    const t=c.turns[shown++];
+    const d=document.createElement("div");
+    d.className="msg "+t.speaker;
+    let chips="";
+    if(t.fired&&t.fired.length) chips=`<div class="chips">${t.fired.map(f=>`<span class="chip">${f.replace("lex_","")}</span>`).join("")}</div>`;
+    const sc=t.score!=null?`<span class="sc">${t.score.toFixed(2)}</span>`:"";
+    d.innerHTML=`<div class="who">${t.speaker==="them"?"caller / sender":"customer"}</div>${sc}${escapeHtml(t.text)}${chips}`;
+    if(t.score!=null){
+      const r=Math.min(t.score,1);
+      d.style.borderColor=`rgba(248,113,113,${0.25+0.6*r})`;
+      d.style.background=`rgba(248,113,113,${0.05+0.16*r})`;
+    }
+    chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+    const run=t.running??0;
+    gfill.style.width=(run*100)+"%";
+    gfill.style.background=run>=DEMO.flag_threshold?"var(--red)":run>=DEMO.flag_threshold*0.6?"var(--amber)":"var(--green)";
+    gval.textContent=run.toFixed(2);
+    if(shown>=c.turns.length){clearInterval(timer);timer=null;showGuard(c);}
+  }
+  function showGuard(c){
+    if(!c.payment){document.getElementById("guardSlot").innerHTML=
+      `<div class="guard"><h3>Payment guard</h3><div class="verdict allow">no payment in this conversation</div></div>`;return;}
+    const pf=c.payment_features||{};
+    const rows=Object.entries(pf).map(([k,v])=>`<span>${k.replace(/_/g," ")}</span><b>${v}</b>`).join("");
+    document.getElementById("guardSlot").innerHTML=`
+      <div class="guard">
+        <h3>Payment guard — sending $${(c.payment.amount||0).toLocaleString()}</h3>
+        <div class="verdict ${c.decision}">${c.decision.toUpperCase()}${c.decision==="block"?" — transfer stopped":""}</div>
+        <span style="margin-left:10px;font-family:ui-monospace,monospace;color:var(--muted)">fused risk ${c.payment_risk}</span>
+        <div class="pf">${rows}</div>
+      </div>`;
+  }
+  document.getElementById("play").onclick=()=>{
+    if(timer){clearInterval(timer);timer=null;return;}
+    if(shown>=DEMO.conversations[cur].turns.length) reset();
+    timer=setInterval(stepOne,900);
+  };
+  function renderAll(){
+    reset();
+    const c=DEMO.conversations[cur];
+    while(shown<c.turns.length) stepOne();
+  }
+  document.getElementById("step").onclick=stepOne;
+  document.getElementById("reset").onclick=reset;
+  pick.onchange=()=>{cur=+pick.value;renderAll();};
+  renderAll();
+}
+
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+function sidebar(){
+  const m=DEMO.metrics, f=m.fusion, side=document.getElementById("side");
+  const bk=m.by_kind||{}, fbk=m.fusion_by_kind||{};
+  const pct=(o)=>o&&o.total?Math.round(100*o.hit/o.total)+"%":"–";
+  side.innerHTML=`
+    <div>
+      <h2>Layer 1 — text model</h2>
+      <div class="metric"><span>conversation AUC-PR</span><span class="v">${m.conv_ap}</span></div>
+      <div class="metric"><span>recall · pressure</span><span class="v good">${pct(bk.pressure)}</span></div>
+      <div class="metric"><span>recall · camouflaged</span><span class="v" style="color:var(--amber)">${pct(bk.camouflaged)}</span></div>
+      <div class="metric"><span>flagged before payment</span><span class="v">${m.flagged_before_ask}/${m.convos_with_ask}</span></div>
+    </div>
+    <div>
+      <h2>Layer 2 — payment guard</h2>
+      <div class="metric"><span>scam payments stopped</span><span class="v good">${Math.round(f.stop_rate*100)}%</span></div>
+      <div class="metric"><span>genuine friction</span><span class="v">${Math.round(f.friction_rate*100)}%</span></div>
+      <div class="metric"><span>hard false-block</span><span class="v">${Math.round(f.hard_fp_rate*100)}%</span></div>
+      <div class="metric"><span>scam $ prevented</span><span class="v good">$${Math.round(m.prevented_usd).toLocaleString()}</span></div>
+    </div>
+    <div>
+      <h2>Scammer rewrites to evade</h2>
+      <svg id="chart" width="284" height="140"></svg>
+      <div class="cap"><b style="color:var(--amber)">Text-only</b> recall falls as the scammer paraphrases. The <b style="color:var(--green)">fusion</b> layer holds — a first-time payee can't be reworded.</div>
+    </div>`;
+  drawChart(m.evade_curve);
+}
+
+function drawChart(curve){
+  if(!window.d3) return;
+  const w=284,h=140,mL=32,mB=22,mT=8,mR=8;
+  const svg=d3.select("#chart");
+  const x=d3.scaleLinear().domain([0,1]).range([mL,w-mR]);
+  const y=d3.scaleLinear().domain([0,1]).range([h-mB,mT]);
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${h-mB})`)
+     .call(d3.axisBottom(x).ticks(0).tickSize(0));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${mL},0)`)
+     .call(d3.axisLeft(y).ticks(3).tickFormat(d3.format(".0%")));
+  const line=k=>d3.line().x(d=>x(d.strength)).y(d=>y(d[k]));
+  svg.append("path").datum(curve).attr("fill","none").attr("stroke","var(--amber)").attr("stroke-width",2).attr("d",line("text_only_recall"));
+  svg.append("path").datum(curve).attr("fill","none").attr("stroke","var(--green)").attr("stroke-width",2).attr("d",line("fusion_recall"));
+  curve.forEach(d=>{
+    svg.append("circle").attr("cx",x(d.strength)).attr("cy",y(d.text_only_recall)).attr("r",2.5).attr("fill","var(--amber)");
+    svg.append("circle").attr("cx",x(d.strength)).attr("cy",y(d.fusion_recall)).attr("r",2.5).attr("fill","var(--green)");
+  });
+  svg.append("text").attr("x",mL).attr("y",h-5).attr("class","axis").text("original");
+  svg.append("text").attr("x",w-mR).attr("y",h-5).attr("class","axis").attr("text-anchor","end").text("heavy paraphrase");
+}
+</script>
+</body>
+</html>

@@ -6,16 +6,16 @@ export const BlockedModal = ({ isBlocked, blockReason, blockDetails, onRestart }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-navy-card border-2 border-mc-red rounded-2xl max-w-lg w-full p-6 shadow-2xl shadow-mc-red/30 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-navy-card border-2 border-mc-red rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl shadow-mc-red/30 animate-in fade-in zoom-in-95 duration-200">
         
         <div className="flex items-center space-x-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-mc-red/20 border border-mc-red flex items-center justify-center text-mc-red">
+          <div className="shrink-0 w-12 h-12 rounded-xl bg-mc-red/20 border border-mc-red flex items-center justify-center text-mc-red">
             <ShieldAlert className="w-7 h-7" />
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center flex-wrap gap-x-2 gap-y-1">
               <span>Security Integrity Alert</span>
-              <span className="bg-mc-red text-white text-[10px] font-mono px-2 py-0.5 rounded">
+              <span className="bg-mc-red text-white text-[10px] font-mono px-2 py-0.5 rounded whitespace-nowrap">
                 HARD BLOCK
               </span>
             </h2>
@@ -38,7 +38,7 @@ export const BlockedModal = ({ isBlocked, blockReason, blockDetails, onRestart }
                 <Terminal className="w-3 h-3" />
                 <span>DIAGNOSTIC LOG:</span>
               </div>
-              <pre>{JSON.stringify(blockDetails, null, 2)}</pre>
+              <pre className="whitespace-pre-wrap break-words">{JSON.stringify(blockDetails, null, 2)}</pre>
             </div>
           )}
         </div>
