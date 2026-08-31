@@ -23,11 +23,12 @@ CORPUS_SEED = 11
 CORPUS_PATH = "data/conversations.jsonl"
 
 # --- classifier ---
-CHAR_NGRAMS = (3, 5)
+CHAR_NGRAMS = (3, 4)
 WORD_NGRAMS = (1, 2)
-MAX_TFIDF_FEATURES = 20_000
+MAX_TFIDF_FEATURES = 15_000
 CLASSIFIER_SEED = 0
 FLAG_THRESHOLD = 0.60          # conversation_score above this = "scam suspected"
+HOLDOUT_ARCHETYPE = "investment"   # kept out of training to measure generalisation to a novel scam
 
 # --- payment guard (fusion) ---
 WARN_THRESHOLD = 0.45

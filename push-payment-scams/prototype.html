@@ -100,11 +100,14 @@ function build(){
   DEMO.conversations.forEach((c,i)=>{
     const o=document.createElement("option");
     o.value=i;
-    o.textContent=`${c.label==="scam"?"🔴":"🟢"}  ${c.archetype.replace(/_/g," ")}`;
+    const tag=c.label==="scam"?(c.intensity==="camouflaged"?" (camouflaged scam)":" (scam)"):"";
+    o.textContent=`${c.label==="scam"?"🔴":"🟢"}  ${c.archetype.replace(/_/g," ")}${tag}`;
     pick.appendChild(o);
   });
   sidebar();
-  let cur=0, shown=0, timer=null;
+  let cur=Math.max(0,DEMO.conversations.findIndex(c=>c.label==="scam"&&c.intensity!=="camouflaged"));
+  pick.value=cur;
+  let shown=0, timer=null;
   const chat=document.getElementById("chat");
   const gfill=document.getElementById("gfill"), gval=document.getElementById("gval");
   document.getElementById("gthr").style.left=(DEMO.flag_threshold*100)+"%";
@@ -169,25 +172,29 @@ function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">"
 
 function sidebar(){
   const m=DEMO.metrics, f=m.fusion, side=document.getElementById("side");
+  const bk=m.by_kind||{}, fbk=m.fusion_by_kind||{};
+  const pct=(o)=>o&&o.total?Math.round(100*o.hit/o.total)+"%":"–";
   side.innerHTML=`
     <div>
       <h2>Layer 1 — scam-intent text model (held-out)</h2>
-      <div class="metric"><span>message AUC-PR</span><span class="v">${m.msg_ap}</span></div>
       <div class="metric"><span>conversation AUC-PR</span><span class="v">${m.conv_ap}</span></div>
-      <div class="metric"><span>flagged before the payment ask</span><span class="v good">${m.flagged_before_ask}/${m.convos_with_ask}</span></div>
-      <div class="metric"><span>mean lead time</span><span class="v">${m.mean_lead_turns} turns</span></div>
+      <div class="metric"><span>recall — <b style="color:var(--text)">pressure</b> scams</span><span class="v good">${pct(bk.pressure)}</span></div>
+      <div class="metric"><span>recall — <b style="color:var(--amber)">camouflaged</b> scams</span><span class="v" style="color:var(--amber)">${pct(bk.camouflaged)}</span></div>
+      <div class="metric"><span>flagged before the payment ask</span><span class="v">${m.flagged_before_ask}/${m.convos_with_ask}</span></div>
+      <div class="metric"><span>novel archetype (<code>${m.novel_archetype}</code>, unseen)</span><span class="v good">${Math.round(m.novel_recall*100)}%</span></div>
     </div>
     <div>
       <h2>Layer 2 — payment-risk fusion (held-out payments)</h2>
       <div class="metric"><span>scam payments stopped</span><span class="v good">${f.scam_stopped}/${m.n_scam_pay} (${Math.round(f.stop_rate*100)}%)</span></div>
-      <div class="metric"><span>genuine-payment friction</span><span class="v">${Math.round(f.friction_rate*100)}%</span></div>
-      <div class="metric"><span>hard false-block</span><span class="v">${Math.round(f.hard_fp_rate*100)}%</span></div>
+      <div class="metric"><span>stopped — <b style="color:var(--text)">pressure</b></span><span class="v good">${pct(fbk.pressure)}</span></div>
+      <div class="metric"><span>stopped — <b style="color:var(--amber)">camouflaged</b></span><span class="v" style="color:var(--amber)">${pct(fbk.camouflaged)}</span></div>
+      <div class="metric"><span>genuine friction / hard false-block</span><span class="v">${Math.round(f.friction_rate*100)}% / ${Math.round(f.hard_fp_rate*100)}%</span></div>
       <div class="metric"><span>~ scam $ prevented (test slice)</span><span class="v good">$${Math.round(m.prevented_usd).toLocaleString()}</span></div>
     </div>
     <div>
       <h2>Arms race — scammer paraphrases to evade</h2>
       <svg id="chart" width="298" height="150"></svg>
-      <div style="font-size:11px;color:var(--muted)">As the scammer rewrites messages (greedy word attack, TextFooler-style), the <b style="color:var(--amber)">text-only</b> detector falls; the <b style="color:var(--green)">fusion</b> layer holds — a first-time payee can't be reworded.</div>
+      <div style="font-size:11px;color:var(--muted)">The <b style="color:var(--amber)">text-only</b> detector starts below 100% (it already misses most camouflaged scams) and falls further as the scammer rewrites the pressure ones (greedy word attack, TextFooler-style). The <b style="color:var(--green)">fusion</b> layer holds — a first-time payee can't be reworded.</div>
     </div>
     <div class="narr">${DEMO.narrative}</div>`;
   drawChart(m.evade_curve);

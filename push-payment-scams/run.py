@@ -15,7 +15,7 @@ import random
 import numpy as np
 
 from config import (AVG_SCAM_LOSS, CORPUS_PATH, DEMO_DATA_PATH, EVADE_ROUNDS,
-                    FLAG_THRESHOLD)
+                    FLAG_THRESHOLD, HOLDOUT_ARCHETYPE)
 import corpus as corpus_mod
 from classifier import (ScamClassifier, conversation_scores, early_detection,
                         messages_from)
@@ -63,11 +63,43 @@ def main(use_llm=False, fresh=False):
         [conv_final[r["id"]] for r in test_rows])
     before, total, lead = early_detection(test_rows, seq_test)
 
+    # recall split by how hard the scammer played it
+    def _kind(r):
+        return "camouflaged" if r.get("intensity") == "camouflaged" else "pressure"
+
+    by_kind = {"pressure": [0, 0], "camouflaged": [0, 0]}
+    by_arch = {}
+    for r in test_rows:
+        if r["label"] != "scam":
+            continue
+        by_arch.setdefault(r["archetype"], [0, 0])
+        by_arch[r["archetype"]][1] += 1
+        by_kind[_kind(r)][1] += 1
+        if conv_final[r["id"]] >= FLAG_THRESHOLD:
+            by_arch[r["archetype"]][0] += 1
+            by_kind[_kind(r)][0] += 1
+
+    # generalisation: retrain with HOLDOUT_ARCHETYPE scams removed, test on them
+    keep = [r for r in train_rows if not (r["label"] == "scam"
+                                          and r["archetype"] == HOLDOUT_ARCHETYPE)]
+    ho_tr = messages_from(keep)
+    ho_clf = ScamClassifier().fit([m["text"] for m in ho_tr], [m["y"] for m in ho_tr])
+    ho_seq = conversation_scores(ho_clf, test_rows)
+    novel = [r for r in test_rows if r["label"] == "scam" and r["archetype"] == HOLDOUT_ARCHETYPE]
+    novel_recall = (sum(ho_seq[r["id"]][-1][1] >= FLAG_THRESHOLD for r in novel)
+                    / max(len(novel), 1))
+
     print("\n=== layer 1: scam-intent text classifier (held-out) ===")
     print(f"  message-level AUC-PR : {msg_ap:.3f}")
     print(f"  conversation  AUC-PR : {conv_ap:.3f}")
     print(f"  flagged BEFORE the payment ask: {before}/{total} scam conversations "
           f"(mean {lead:.1f} turns early)")
+    print("  recall @ flag threshold:")
+    for k, (hit, tot) in by_kind.items():
+        if tot:
+            print(f"    {k:<14} {hit}/{tot}  ({hit/tot:.0%})")
+    print(f"  novel archetype ('{HOLDOUT_ARCHETYPE}' unseen in training): "
+          f"{novel_recall:.0%} recall")
 
     # --- layer 2: payment-risk fusion ---
     grng = random.Random(1)
@@ -86,6 +118,16 @@ def main(use_llm=False, fresh=False):
     fuse = evaluate(risk, yte)
     n_scam_pay, n_legit_pay = sum(yte), len(yte) - sum(yte)
 
+    # fusion stop rate split by camouflaged vs pressure scams
+    fk = {"pressure": [0, 0], "camouflaged": [0, 0]}
+    for (r, _), rk in zip(pay_test, risk):
+        if r["label"] != "scam":
+            continue
+        k = _kind(r)
+        fk[k][1] += 1
+        if PaymentGuard.decide(rk) in ("hold", "block"):
+            fk[k][0] += 1
+
     text_only_stop = sum(1 for (r, pr) in pay_test
                          if r["label"] == "scam" and pr["conversation_score"] >= FLAG_THRESHOLD)
     text_only_fp = sum(1 for (r, pr) in pay_test
@@ -97,6 +139,9 @@ def main(use_llm=False, fresh=False):
     print(f"  fusion          : stopped {fuse['scam_stopped']}/{n_scam_pay} "
           f"({fuse['stop_rate']:.0%}); genuine friction {fuse['friction_rate']:.0%}, "
           f"hard false-block {fuse['hard_fp_rate']:.0%}")
+    for k, (hit, tot) in fk.items():
+        if tot:
+            print(f"      {k:<14} {hit}/{tot} ({hit/tot:.0%})")
     prevented = fuse["scam_stopped"] * AVG_SCAM_LOSS
     print(f"  ~${prevented:,.0f} of scam payments prevented on the test slice")
 
@@ -114,6 +159,9 @@ def main(use_llm=False, fresh=False):
         "fusion": fuse, "text_only_stop": text_only_stop, "text_only_fp": text_only_fp,
         "n_scam_pay": int(n_scam_pay), "n_legit_pay": int(n_legit_pay),
         "prevented_usd": prevented, "evade_curve": curve,
+        "by_kind": {k: {"hit": h, "total": t} for k, (h, t) in by_kind.items() if t},
+        "fusion_by_kind": {k: {"hit": h, "total": t} for k, (h, t) in fk.items() if t},
+        "novel_archetype": HOLDOUT_ARCHETYPE, "novel_recall": round(novel_recall, 3),
     }
     _write_demo(clf, test_rows,
                 {r["id"]: (float(rk), pr) for (r, pr), rk in zip(pay_test, risk)},
@@ -124,8 +172,12 @@ def main(use_llm=False, fresh=False):
 def _write_demo(clf, test_rows, risk_by_id, metrics):
     rng = random.Random(3)
     scam = [r for r in test_rows if r["label"] == "scam" and r["id"] in risk_by_id]
+    camo = [r for r in scam if r.get("intensity") == "camouflaged"]
+    pressure = [r for r in scam if r.get("intensity") != "camouflaged"]
     legit = [r for r in test_rows if r["label"] == "legit"]
-    sample = rng.sample(scam, min(6, len(scam))) + rng.sample(legit, min(5, len(legit)))
+    sample = (rng.sample(pressure, min(4, len(pressure)))
+              + rng.sample(camo, min(2, len(camo)))
+              + rng.sample(legit, min(5, len(legit))))
     rng.shuffle(sample)
 
     convos = []
@@ -144,6 +196,7 @@ def _write_demo(clf, test_rows, risk_by_id, metrics):
         rk, pr = risk_by_id.get(r["id"], (None, None))
         convos.append({
             "id": r["id"], "label": r["label"], "archetype": r["archetype"],
+            "intensity": r.get("intensity", ""),
             "turns": turns, "ask_turn": r["ask_turn"], "payment": r["payment"],
             "payment_made": r["payment_made"],
             "payment_risk": round(rk, 3) if rk is not None else None,

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank-Bot Jailbreak Arena</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" onerror="void 0"></script>
+<script src="demo_data.js" onerror="void 0"></script>
+<style>
+  :root{--bg:#0b0f17;--panel:#121826;--panel2:#1a2130;--line:#262f42;--text:#e6ebf4;
+        --muted:#8a97ac;--accent:#22d3ee;--green:#34d399;--amber:#fbbf24;--red:#f87171;--violet:#a78bfa;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Inter","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);
+       font-size:14px;line-height:1.45;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+  header{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;
+         align-items:baseline;gap:16px;flex-wrap:wrap;}
+  header h1{font-size:16px;font-weight:650;}
+  header .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .main{flex:1;display:flex;min-height:0;}
+  .center{flex:1;display:flex;flex-direction:column;min-width:0;padding:14px 18px;gap:12px;overflow:hidden;}
+  .side{width:340px;border-left:1px solid var(--line);background:var(--panel);padding:16px;
+        overflow-y:auto;display:flex;flex-direction:column;gap:18px;}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  select,button{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+        border-radius:8px;padding:6px 11px;font-size:12px;font-family:inherit;}
+  button{cursor:pointer;font-weight:600;}
+  button:hover{border-color:var(--accent);}
+  .cfgtabs{display:flex;gap:4px;}
+  .cfgtabs button.on{background:var(--accent);border-color:var(--accent);color:#05222a;}
+  .verdict-strip{display:flex;gap:8px;align-items:center;font-size:12px;flex-wrap:wrap;
+        background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;}
+  .pill{padding:2px 8px;border-radius:6px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px;}
+  .pill.ok{background:rgba(52,211,153,.16);color:var(--green);}
+  .pill.bad{background:rgba(248,113,113,.18);color:var(--red);}
+  .pill.warn{background:rgba(251,191,36,.16);color:var(--amber);}
+  .pill.mut{background:rgba(138,151,172,.16);color:var(--muted);}
+  .chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:4px 2px;}
+  .round{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--panel);}
+  .round .r{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+  .atk{background:rgba(167,139,250,.09);border:1px solid rgba(167,139,250,.3);border-radius:9px;
+       padding:8px 10px;font-size:13px;white-space:pre-wrap;word-break:break-word;}
+  .flow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:7px 0;font-size:11px;color:var(--muted);}
+  .arrow{opacity:.5;}
+  .bot{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px;margin-top:6px;}
+  .action{margin-top:6px;font-family:ui-monospace,monospace;font-size:11px;background:#05070c;
+          border:1px solid var(--line);border-radius:7px;padding:7px 9px;color:var(--amber);}
+  .outcome{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;}
+  h2{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px;}
+  .asrtab{width:100%;border-collapse:collapse;font-size:12px;}
+  .asrtab th,.asrtab td{padding:5px 6px;border-bottom:1px solid rgba(38,47,66,.5);text-align:right;}
+  .asrtab th:first-child,.asrtab td:first-child{text-align:left;font-family:ui-monospace,monospace;}
+  .asrtab td.g{color:var(--green);} .asrtab td.r{color:var(--red);font-weight:700;}
+  .lead{font-size:11px;font-family:ui-monospace,monospace;color:var(--muted);}
+  .lead b{color:var(--text);}
+  .narr{font-size:12px;color:var(--muted);line-height:1.55;border-top:1px solid var(--line);padding-top:12px;}
+  .axis text{fill:var(--muted);font-size:10px;} .axis path,.axis line{stroke:var(--line);}
+  .empty{padding:40px;color:var(--muted);text-align:center;}
+  code{background:var(--panel2);padding:1px 4px;border-radius:4px;font-family:ui-monospace,monospace;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Bank-Bot Jailbreak Arena</h1>
+    <div class="sub">A Gemini agent jailbreaks a Gemini bank bot. Same attack, four defence configs — watch where the money stops.</div>
+  </div>
+</header>
+<div class="main">
+  <div class="center" id="center">
+    <div class="controls">
+      <select id="goal"></select>
+      <select id="tech"></select>
+      <span style="color:var(--muted);font-size:11px">defence:</span>
+      <span class="cfgtabs" id="cfgtabs"></span>
+    </div>
+    <div class="verdict-strip" id="strip"></div>
+    <div class="chat" id="chat"><div class="empty" id="noData">Run <code>python run.py --llm</code> then reload.</div></div>
+  </div>
+  <div class="side" id="side"></div>
+</div>
+<script>
+const DEMO = window.DEMO;
+if (DEMO) build();
+
+function build(){
+  document.getElementById("noData")?.remove();
+  const eps = DEMO.episodes;
+  const goals=[...new Set(eps.map(e=>e.goal))];
+  const techs=[...new Set(eps.map(e=>e.technique))];
+  const cfgs=["none","guardrail","policy","full"];
+  const gSel=document.getElementById("goal"), tSel=document.getElementById("tech"), tabs=document.getElementById("cfgtabs");
+  goals.forEach(g=>gSel.add(new Option(g==="refund"?"Goal: $"+DEMO.target_refund+" refund":"Goal: leak system prompt",g)));
+  techs.forEach(t=>tSel.add(new Option(t.replace(/_/g," "),t)));
+  let cfg="none";
+  cfgs.forEach(c=>{const b=document.createElement("button");b.textContent=c;b.onclick=()=>{cfg=c;paintTabs();render();};tabs.appendChild(b);});
+  function paintTabs(){[...tabs.children].forEach(b=>b.classList.toggle("on",b.textContent===cfg));}
+
+  function find(){
+    return eps.find(e=>e.goal===gSel.value&&e.technique===tSel.value&&e.defense===cfg)
+        || eps.find(e=>e.goal===gSel.value&&e.defense===cfg);
+  }
+  function render(){
+    const ep=find(); const chat=document.getElementById("chat"); chat.innerHTML="";
+    const strip=document.getElementById("strip");
+    if(!ep){strip.innerHTML="<span class='pill mut'>no episode</span>";return;}
+    strip.innerHTML=
+      `<span class="pill ${ep.success?'bad':'ok'}">${ep.success?'ATTACK SUCCEEDED':'ATTACK FAILED'}</span>`+
+      `<span class="pill mut">${ep.technique.replace(/_/g,' ')}</span>`+
+      `<span class="pill mut">defence: ${ep.defense}</span>`+
+      (!ep.success&&ep.blocked_by?`<span class="pill warn">stopped by: ${ep.blocked_by.replace(/_/g,' ')}</span>`:"")+
+      (ep.success?`<span class="pill bad">${ep.goal==='refund'?'$'+DEMO.target_refund+' moved':'system prompt leaked'} on round ${ep.success_round+1}</span>`:"")+
+      (ep.policy_denials>0?`<span class="pill ok">bot jailbroken ${ep.bot_attempts||ep.policy_denials}× — code denied every refund</span>`:"")+
+      (ep.guardrail_blocks>0&&!ep.policy_denials?`<span class="pill mut">guardrail blocked ${ep.guardrail_blocks}</span>`:"")+
+      `<span style="color:var(--muted)">${ep.turns.length} round(s)</span>`;
+    ep.turns.forEach(t=>{
+      const d=document.createElement("div");d.className="round";
+      const sc=t.screen||{};
+      const gate=t.gate||{};
+      let flow=`<span>guardrail: ${sc.blocked&&sc.blocked_by==='guardrail'?`<b style="color:var(--red)">BLOCKED</b> (${sc.score??'-'}, ${sc.feature||''})`:sc.score!=null?`pass (${sc.score})`:'off'}</span>`;
+      flow+=`<span class="arrow">›</span><span>router: ${sc.blocked&&sc.blocked_by==='router'?'<b style="color:var(--red)">REFUSED</b>':'ok'}</span>`;
+      let botHtml="";
+      if(t.bot_reply!=null){
+        botHtml=`<div class="bot">${esc(t.bot_reply)}</div>`;
+        if(t.action) botHtml+=`<div class="action">→ ${t.action.tool}(${JSON.stringify(t.action.args||{})})</div>`;
+        flow+=`<span class="arrow">›</span><span>policy gate: ${gate.denied?`<b style="color:var(--green)">DENY</b> — ${esc(gate.reason||'')}`:t.action?'ALLOW':'n/a'}</span>`;
+        const oc=[];
+        if(t.money_moved>0) oc.push(`<span class="pill bad">$${t.money_moved} moved</span>`);
+        if(t.leak_succeeded) oc.push(`<span class="pill bad">system prompt leaked</span>`);
+        else if(t.leak_detected) oc.push(`<span class="pill warn">leak attempt redacted</span>`);
+        botHtml+=`<div class="outcome">${oc.join("")}</div>`;
+      } else {
+        botHtml=`<div class="bot" style="color:var(--muted)">— message never reached the bot —</div>`;
+      }
+      d.innerHTML=`<div class="r">round ${t.round+1}${t.blocked_by?` · attacker then saw: “${t.blocked_by.replace(/_/g,' ')}”`:''}</div>`+
+        `<div class="atk">${esc(t.attacker)}</div><div class="flow">${flow}</div>${botHtml}`;
+      chat.appendChild(d);
+    });
+  }
+  gSel.onchange=()=>{ // keep tech list valid for goal
+    const valid=[...new Set(eps.filter(e=>e.goal===gSel.value).map(e=>e.technique))];
+    [...tSel.options].forEach(o=>o.hidden=!valid.includes(o.value));
+    if(!valid.includes(tSel.value)) tSel.value=valid[0];
+    render();
+  };
+  tSel.onchange=render;
+  paintTabs(); gSel.onchange(); sidebar();
+}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+function sidebar(){
+  const S=DEMO.summary, side=document.getElementById("side");
+  const rows=Object.entries(S).map(([c,v])=>
+    `<tr><td>${c}</td><td class="${v.refund_asr>0?'r':'g'}">${Math.round(v.refund_asr*100)}%</td>`+
+    `<td class="${v.leak_asr>0?'r':'g'}">${Math.round(v.leak_asr*100)}%</td>`+
+    `<td>$${v.money_moved}</td><td>${v.utility_ok}/${v.utility_n}</td></tr>`).join("");
+  side.innerHTML=`
+    <div><h2>Attack Success Rate — by defence</h2>
+      <table class="asrtab"><tr><th>config</th><th>refund</th><th>leak</th><th>$ moved</th><th>utility</th></tr>${rows}</table>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">utility = genuine ≤$50 refund requests correctly fulfilled</div>
+    </div>
+    <div><h2>Guardrail evasion (config: guardrail)</h2><svg id="ev" width="300" height="120"></svg>
+      <div style="font-size:11px;color:var(--muted)">obfuscation strength vs the classifier's catch rate</div></div>
+    <div><h2>Technique leaderboard (config: none)</h2><div id="lead" class="lead"></div></div>
+    <div style="font-size:12px">guardrail held-out AUC-PR: <b>${DEMO.guardrail_auc_pr}</b> ·
+      policy: refund ≤ $${DEMO.policy.max_amount}, account ≥ ${DEMO.policy.min_age_days}d</div>
+    <div class="narr">${DEMO.narrative}</div>`;
+  const lb=DEMO.leaderboard.none||{};
+  document.getElementById("lead").innerHTML=Object.entries(lb)
+    .map(([t,v])=>`<div>${t.replace(/_/g," ")} &nbsp;<b>${v.success}/${v.n}</b></div>`).join("");
+  drawEvasion((S.guardrail||S.full||{}).evasion||[]);
+}
+function drawEvasion(curve){
+  if(!window.d3||!curve.length) return;
+  const w=300,h=120,m={l:34,b:22,t:8,r:8};
+  const svg=d3.select("#ev");
+  const x=d3.scaleLinear().domain([0,1]).range([m.l,w-m.r]);
+  const y=d3.scaleLinear().domain([0,1]).range([h-m.b,m.t]);
+  svg.append("g").attr("class","axis").attr("transform",`translate(0,${h-m.b})`)
+     .call(d3.axisBottom(x).ticks(3).tickFormat(d3.format(".0%")));
+  svg.append("g").attr("class","axis").attr("transform",`translate(${m.l},0)`)
+     .call(d3.axisLeft(y).ticks(3).tickFormat(d3.format(".0%")));
+  svg.append("path").datum(curve).attr("fill","none").attr("stroke","var(--amber)").attr("stroke-width",2)
+     .attr("d",d3.line().x(d=>x(d.strength)).y(d=>y(d.caught)));
+  curve.forEach(d=>svg.append("circle").attr("cx",x(d.strength)).attr("cy",y(d.caught)).attr("r",2.5).attr("fill","var(--amber)"));
+}
+</script>
+</body>
+</html>
