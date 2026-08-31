@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -62,8 +62,118 @@
   .empty{padding:40px;color:var(--muted);text-align:center;}
   code{background:var(--panel2);padding:1px 4px;border-radius:4px;font-family:ui-monospace,monospace;}
 </style>
+
+<!-- ARGONAUTS SHARED DESIGN SYSTEM -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Override lab colours to match Hub design system */
+  :root {
+    --bg:     #0A0B0D !important;
+    --panel:  #15171B !important;
+    --panel2: #1C1F24 !important;
+    --line:   #2A2D33 !important;
+    --text:   #F5F6F7 !important;
+    --muted:  #9A9EA6 !important;
+    --accent: #38BDF8 !important;
+    --red:    #E5484D !important;
+    --green:  #22D3EE !important;
+  }
+
+  /* Argonauts sticky navbar */
+  #argos-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 24px;
+    height: 56px;
+    background: rgba(10,11,13,0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid #2A2D33;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  #argos-nav .argos-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  #argos-nav .argos-wordmark {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #F5F6F7;
+  }
+  #argos-nav .argos-sep {
+    width: 1px;
+    height: 18px;
+    background: #2A2D33;
+  }
+  #argos-nav .argos-lab-name {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #38BDF8;
+  }
+  #argos-nav .argos-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: #38BDF8;
+    opacity: 0.7;
+  }
+  #argos-nav .argos-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #9A9EA6;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #2A2D33;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  #argos-nav .argos-back:hover {
+    color: #F5F6F7;
+    border-color: #9A9EA6;
+  }
+
+  /* nudge existing wrap to not double-pad */
+  .wrap { padding-top: 16px !important; }
+  body { font-family: 'Inter', system-ui, sans-serif !important; }
+</style>
+<!-- END ARGONAUTS SHARED DESIGN SYSTEM -->
 </head>
 <body>
+<nav id="argos-nav">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="/" class="argos-brand">
+      <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+        <path d="M16 2 L28 8 L28 22 Q28 29 16 30 Q4 29 4 22 L4 8 Z" fill="#0A0B0D" stroke="#E5484D" stroke-width="1.5"/>
+        <path d="M16 8 L22 11 L22 20 Q22 24 16 26 Q10 24 10 20 L10 11 Z" fill="#071419" stroke="#22D3EE" stroke-width="1"/>
+        <circle cx="16" cy="16" r="2.5" fill="#22D3EE"/>
+      </svg>
+      <span class="argos-wordmark">Argonauts</span>
+    </a>
+    <span class="argos-sep"></span>
+    <span class="argos-num">06</span>
+    <span class="argos-lab-name">Voice-Auth Bypass</span>
+  </div>
+  <a href="/" class="argos-back">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 4l-5 4 5 4"/>
+    </svg>
+    All Labs
+  </a>
+</nav>
 <header>
   <div>
     <h1>Voice-Auth Bypass Arena</h1>
