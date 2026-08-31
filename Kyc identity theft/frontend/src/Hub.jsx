@@ -300,7 +300,7 @@ const LabCard = ({ lab, index }) => {
       onMouseEnter={e => { e.currentTarget.style.borderColor = accent + '55'; e.currentTarget.style.boxShadow = `0 0 0 1px ${accent}22, 0 8px 32px ${accent}18`; }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2D33'; e.currentTarget.style.boxShadow = 'none'; }}
     >
-      {/* Top accent line — full opacity, per-lab colour */}
+      {/* Top accent line — per-lab colour */}
       <span
         className="absolute inset-x-0 top-0 h-[2px] z-10"
         style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
@@ -313,73 +313,75 @@ const LabCard = ({ lab, index }) => {
         style={{ backgroundColor: accent }}
       />
 
-      {/* Attack half */}
+      {/* ── CARD HEADER — name is front and centre ── */}
       <div
-        className="relative flex-1 p-5 border-b border-argos-border"
-        style={{ background: `linear-gradient(135deg, ${accent}10 0%, transparent 60%)` }}
+        className="relative px-5 pt-6 pb-4 border-b border-argos-border"
+        style={{ background: `linear-gradient(135deg, ${accent}14 0%, transparent 70%)` }}
       >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            {/* Icon with per-lab accent */}
+        <div className="flex items-start justify-between gap-3">
+          {/* Icon + name stack */}
+          <div className="flex items-center gap-3">
             <span
-              className="flex h-8 w-8 items-center justify-center rounded"
-              style={{ backgroundColor: accent + '18', border: `1px solid ${accent}35`, color: accent }}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded"
+              style={{ backgroundColor: accent + '1A', border: `1px solid ${accent}40`, color: accent }}
             >
               {lab.icon}
             </span>
-            <span
-              className="text-[10px] font-mono font-semibold tracking-widest uppercase"
-              style={{ color: '#E5484D' }}
+            <h3
+              className="font-grotesk font-bold text-base leading-tight text-argos-text group-hover:text-white transition-colors"
             >
-              ⬡ Attack
-            </span>
+              {lab.title}
+            </h3>
           </div>
-          {/* Sequential number */}
-          <span
-            className="font-mono text-[11px] font-bold tabular-nums"
-            style={{ color: accent + 'AA' }}
-          >
-            {num}
+
+          {/* Number + live badge */}
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <span
+              className="font-mono text-[11px] font-bold tabular-nums"
+              style={{ color: accent }}
+            >
+              {num}
+            </span>
+            {lab.live ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
+                LIVE
+              </span>
+            ) : (
+              <span
+                className="text-[9px] font-mono font-semibold tracking-widest uppercase px-1.5 py-0.5 rounded"
+                style={{ color: accent, border: `1px solid ${accent}35`, background: accent + '12' }}
+              >
+                Lab
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Attack half */}
+      <div className="relative flex-1 p-5 border-b border-argos-border">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] font-mono font-semibold tracking-widest uppercase" style={{ color: '#E5484D' }}>
+            ▲ Attack
           </span>
         </div>
         <p className="text-[13px] leading-relaxed text-argos-muted">{lab.attackSummary}</p>
       </div>
 
       {/* Defense half */}
-      <div
-        className="relative flex-1 p-5"
-        style={{ background: 'linear-gradient(135deg, #22D3EE0D 0%, transparent 60%)' }}
-      >
-        <div className="flex items-center gap-2.5 mb-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded border border-defense/25 bg-defense/10 text-defense">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
+      <div className="relative flex-1 p-5 border-b border-argos-border">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] font-mono font-semibold tracking-widest text-defense uppercase">
+            ▲ Defense
           </span>
-          <span className="text-[10px] font-mono font-semibold tracking-widest text-defense uppercase">⬡ Defense</span>
         </div>
         <p className="text-[13px] leading-relaxed text-argos-muted">{lab.defenseSummary}</p>
       </div>
 
-      {/* Footer */}
-      <div className="px-5 py-4 border-t border-argos-border" style={{ background: '#0E1012' }}>
-        <div className="flex items-center justify-between mb-2.5">
-          <h3 className="text-sm font-semibold text-argos-text font-grotesk group-hover:text-white transition-colors">{lab.title}</h3>
-          {lab.live ? (
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
-              LIVE
-            </span>
-          ) : (
-            <span
-              className="text-[9px] font-mono font-semibold tracking-widest uppercase px-1.5 py-0.5 rounded"
-              style={{ color: accent, border: `1px solid ${accent}30`, background: accent + '10' }}
-            >
-              Lab
-            </span>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-1.5 mb-3.5">
+      {/* Footer — tags + CTA */}
+      <div className="px-5 py-3.5 flex items-center justify-between gap-3" style={{ background: '#0D0F11' }}>
+        <div className="flex flex-wrap gap-1.5">
           {lab.tags.map(t => (
             <span key={t} className="px-2 py-0.5 rounded text-[10px] font-mono text-argos-muted bg-argos-bg border border-argos-border">
               {t}
@@ -387,10 +389,10 @@ const LabCard = ({ lab, index }) => {
           ))}
         </div>
         <span
-          className="inline-flex items-center gap-1 text-xs font-semibold transition-colors"
-          style={{ color: accent + 'BB' }}
+          className="inline-flex items-center gap-1 text-xs font-semibold shrink-0 transition-colors"
+          style={{ color: accent + 'CC' }}
         >
-          View Lab
+          Open
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1">
             <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
