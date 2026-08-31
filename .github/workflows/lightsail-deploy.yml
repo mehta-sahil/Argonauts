@@ -1,0 +1,235 @@
+name: Deploy to Lightsail
+
+# Builds the three containers that run on the Lightsail service, pushes them to
+# Lightsail's own registry, then rolls out a deployment that also pulls the KYC
+# backend straight from ECR.
+#
+# Lightsail has no native CI/CD — a deployment only happens when something calls
+# CreateContainerServiceDeployment, so this workflow is the automation.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Kyc identity theft/frontend/**'
+      - 'chatbot-prompt-injection/**'
+      - 'push-payment-scams/**'
+      - '.github/workflows/lightsail-deploy.yml'
+  # Runs after the backend image lands in ECR, so a backend change reaches the
+  # site without a second manual step.
+  workflow_run:
+    workflows: ["KYC backend image"]
+    types: [completed]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  SERVICE_NAME: argonauts
+  ECR_REPOSITORY: kyc-backend
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # workflow_run fires on failure too; only ship a green backend build.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assume AWS role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-skip-session-tagging: true
+
+      # push-container-image is a thin wrapper that shells out to this binary.
+      # Without it the AWS CLI errors out instead of uploading.
+      - name: Install lightsailctl
+        run: |
+          set -euo pipefail
+          sudo curl -fsSL \
+            "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" \
+            -o /usr/local/bin/lightsailctl
+          sudo chmod +x /usr/local/bin/lightsailctl
+
+      # The CVV lab reads window.CARDING_API_URL from a file that is git-ignored
+      # because it holds a live endpoint. Recreate it from a secret at build time
+      # so the lab works on the deployed site.
+      - name: Write CVV lab config
+        env:
+          CARDING_API_URL: ${{ secrets.CARDING_API_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CARDING_API_URL:-}" ]; then
+            echo "::error::CARDING_API_URL secret is not set — the CVV lab would ship broken."
+            exit 1
+          fi
+          cat > "Kyc identity theft/frontend/public/labs/distributed-cvv-guessing/config.js" <<EOF
+          // Generated at build time from the CARDING_API_URL secret.
+          window.CARDING_API_URL = "${CARDING_API_URL}";
+          EOF
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: "./Kyc identity theft/frontend"
+          file: "./Kyc identity theft/frontend/Dockerfile"
+          platforms: linux/amd64
+          load: true
+          tags: argonauts-frontend:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Build chatbot
+        uses: docker/build-push-action@v6
+        with:
+          context: ./chatbot-prompt-injection
+          file: ./chatbot-prompt-injection/Dockerfile.live
+          platforms: linux/amd64
+          load: true
+          tags: argonauts-chatbot:ci
+          cache-from: type=gha,scope=chatbot
+          cache-to: type=gha,mode=max,scope=chatbot
+
+      - name: Build pushpay
+        uses: docker/build-push-action@v6
+        with:
+          context: ./push-payment-scams
+          file: ./push-payment-scams/Dockerfile.live
+          platforms: linux/amd64
+          load: true
+          tags: argonauts-pushpay:ci
+          cache-from: type=gha,scope=pushpay
+          cache-to: type=gha,mode=max,scope=pushpay
+
+      # Each push prints the versioned name Lightsail assigned, e.g.
+      # ":argonauts.frontend.11". That name — not the local tag — is what the
+      # deployment has to reference, so capture it here.
+      - name: Push images to the Lightsail registry
+        id: push
+        run: |
+          set -euo pipefail
+          push() {
+            local label="$1" local_tag="$2" out name
+            out=$(aws lightsail push-container-image \
+              --region "$AWS_REGION" \
+              --service-name "$SERVICE_NAME" \
+              --label "$label" \
+              --image "$local_tag")
+            name=$(printf '%s' "$out" | grep -oE '":'"$SERVICE_NAME"'\.[^"]+"' | tr -d '"' | tail -n1)
+            if [ -z "$name" ]; then
+              echo "::error::could not parse the pushed image name for $label"
+              printf '%s\n' "$out"
+              exit 1
+            fi
+            echo "$label=$name" >> "$GITHUB_OUTPUT"
+            echo "pushed $label -> $name"
+          }
+          push frontend argonauts-frontend:ci
+          push chatbot  argonauts-chatbot:ci
+          push pushpay  argonauts-pushpay:ci
+
+      # Pin the backend by digest rather than :latest. Lightsail caches a moving
+      # tag, so a tag-only reference can redeploy the previous image.
+      - name: Resolve the KYC backend image digest
+        id: kyc
+        run: |
+          set -euo pipefail
+          ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+          DIGEST=$(aws ecr describe-images \
+            --region "$AWS_REGION" \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag=latest \
+            --query 'imageDetails[0].imageDigest' --output text)
+          echo "image=${ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPOSITORY}@${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Build the deployment definition
+        env:
+          FRONTEND: ${{ steps.push.outputs.frontend }}
+          CHATBOT: ${{ steps.push.outputs.chatbot }}
+          PUSHPAY: ${{ steps.push.outputs.pushpay }}
+          KYC_IMAGE: ${{ steps.kyc.outputs.image }}
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg service "$SERVICE_NAME" \
+            --arg frontend "$FRONTEND" \
+            --arg chatbot "$CHATBOT" \
+            --arg pushpay "$PUSHPAY" \
+            --arg kyc "$KYC_IMAGE" \
+            '{
+              serviceName: $service,
+              containers: {
+                frontend: { image: $frontend, ports: { "80": "HTTP" } },
+                chatbot: {
+                  image: $chatbot,
+                  command: ["uvicorn","server:app","--host","0.0.0.0","--port","8001"],
+                  ports: { "8001": "HTTP" }
+                },
+                pushpay: { image: $pushpay, ports: { "8000": "HTTP" } },
+                "kyc-backend": {
+                  image: $kyc,
+                  environment: {
+                    KYC_MODELS_DIR: "/app/models",
+                    KYC_ALLOWED_ORIGINS: "https://argonauts.qg8fj3h0aqqf4.us-east-1.cs.amazonlightsail.com"
+                  },
+                  ports: { "8000": "HTTP" }
+                }
+              },
+              publicEndpoint: {
+                containerName: "frontend",
+                containerPort: 80,
+                healthCheck: {
+                  path: "/",
+                  successCodes: "200-399",
+                  intervalSeconds: 10,
+                  timeoutSeconds: 5,
+                  healthyThreshold: 2,
+                  unhealthyThreshold: 3
+                }
+              }
+            }' > deployment.json
+          cat deployment.json
+
+      - name: Create the deployment
+        run: |
+          set -euo pipefail
+          VERSION=$(aws lightsail create-container-service-deployment \
+            --region "$AWS_REGION" \
+            --cli-input-json file://deployment.json \
+            --query 'containerService.currentDeployment.version' --output text)
+          echo "DEPLOY_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "### Lightsail deployment v$VERSION created" >> "$GITHUB_STEP_SUMMARY"
+
+      # A failed rollout silently reverts to the last good version, which would
+      # otherwise show up as a green build serving stale code.
+      - name: Wait for the rollout
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            STATE=$(aws lightsail get-container-service-deployments \
+              --region "$AWS_REGION" --service-name "$SERVICE_NAME" \
+              --query "deployments[?version==\`$DEPLOY_VERSION\`].state | [0]" --output text)
+            echo "v$DEPLOY_VERSION: $STATE"
+            case "$STATE" in
+              ACTIVE)
+                echo "Deployment is live." >> "$GITHUB_STEP_SUMMARY"
+                exit 0 ;;
+              FAILED|INACTIVE)
+                echo "::error::deployment v$DEPLOY_VERSION ended as $STATE"
+                aws lightsail get-container-log --region "$AWS_REGION" \
+                  --service-name "$SERVICE_NAME" --container-name kyc-backend \
+                  --query 'logEvents[-40:].message' --output text || true
+                exit 1 ;;
+            esac
+            sleep 20
+          done
+          echo "::error::timed out waiting for v$DEPLOY_VERSION"
+          exit 1

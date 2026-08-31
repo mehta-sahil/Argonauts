@@ -1,0 +1,8 @@
+# node_modules is 138 MB and is reinstalled by `npm ci` inside the builder.
+# Copying it in would bust the layer cache on every build for no benefit.
+node_modules
+dist
+.git
+.gitignore
+Dockerfile
+.dockerignore
