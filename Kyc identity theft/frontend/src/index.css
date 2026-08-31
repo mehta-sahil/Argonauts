@@ -3,52 +3,159 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg: #0A0B0D;
+    --surface: #15171B;
+    --surface-2: #1C1F25;
+    --border: #2A2D33;
+    --text: #F5F6F7;
+    --muted: #9A9EA6;
+    --attack: #E5484D;
+    --defense: #22D3EE;
+    --radius-sm: 4px;
+    --radius: 6px;
+    --radius-lg: 8px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-[#0B0C16] text-slate-100 antialiased font-sans overflow-x-hidden;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(235, 0, 27, 0.08) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(247, 158, 27, 0.06) 0px, transparent 50%);
-    background-attachment: fixed;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
-  code, kbd, samp, pre {
-    font-family: 'Fira Code', monospace;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0F0F23;
-}
-::-webkit-scrollbar-thumb {
-  background: #2E3856;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #EB001B;
+/* ── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--attack); }
+
+/* ── Grid background pattern ────────────────────────────── */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+  background-size: 48px 48px;
 }
 
-/* Futuristic Scanline Effect */
-.scanline {
-  background: linear-gradient(
-    to bottom,
-    rgba(255,255,255,0),
-    rgba(255,255,255,0) 50%,
-    rgba(0, 0, 0, 0.3) 50%,
-    rgba(0, 0, 0, 0.3)
-  );
-  background-size: 100% 4px;
+/* ── Gradient text utility ──────────────────────────────── */
+.gradient-attack {
+  background: linear-gradient(135deg, #E5484D 0%, #FF6B6B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.radar-sweep {
-  background: conic-gradient(
-    from 0deg at 50% 50%,
-    rgba(235, 0, 27, 0) 0deg,
-    rgba(235, 0, 27, 0.15) 300deg,
-    rgba(247, 158, 27, 0.4) 360deg
-  );
+.gradient-defense {
+  background: linear-gradient(135deg, #22D3EE 0%, #3DDC97 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Hero SVG animation ─────────────────────────────────── */
+@keyframes pulseRed {
+  0%, 100% { r: 8; opacity: 1; }
+  50% { r: 13; opacity: 0.6; }
+}
+@keyframes pulseCyan {
+  0%, 100% { r: 10; opacity: 1; }
+  50% { r: 15; opacity: 0.7; }
+}
+@keyframes travelPacket {
+  0%   { opacity: 0; offset-distance: 0%; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; offset-distance: 100%; }
+}
+@keyframes ripple {
+  0%   { r: 10; opacity: 0.6; }
+  100% { r: 40; opacity: 0; }
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes headlineIn {
+  from { opacity: 0; transform: translateY(28px); clip-path: inset(100% 0 0 0); }
+  to   { opacity: 1; transform: translateY(0);    clip-path: inset(0% 0 0 0);   }
+}
+@keyframes headlineOut {
+  from { opacity: 1; transform: translateY(0);     clip-path: inset(0% 0 0 0);   }
+  to   { opacity: 0; transform: translateY(-28px); clip-path: inset(0 0 100% 0); }
+}
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0); }
+  33%       { transform: translate(6px, -8px); }
+  66%       { transform: translate(-4px, 5px); }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+.anim-packet {
+  animation: travelPacket 3s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+.anim-pulse-red {
+  animation: pulseRed 2.4s ease-in-out infinite;
+}
+.anim-pulse-cyan {
+  animation: pulseCyan 2s ease-in-out infinite;
+}
+.anim-ripple {
+  animation: ripple 2s ease-out infinite;
+}
+.anim-drift {
+  animation: drift 8s ease-in-out infinite;
+}
+.anim-fade-up {
+  animation: fadeSlideUp 0.7s ease forwards;
+}
+.headline-in  { animation: headlineIn  0.55s cubic-bezier(0.16,1,0.3,1) forwards; }
+.headline-out { animation: headlineOut 0.4s  cubic-bezier(0.7,0,0.84,0) forwards; }
+
+/* ── Shimmer loading bar ────────────────────────────────── */
+.shimmer-bar {
+  background: linear-gradient(90deg, var(--border) 25%, #3A3F4A 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+}
+
+/* ── Code block syntax ──────────────────────────────────── */
+.token-keyword  { color: #C792EA; }
+.token-string   { color: #C3E88D; }
+.token-comment  { color: #546E7A; font-style: italic; }
+.token-number   { color: #F78C6C; }
+.token-function { color: #82AAFF; }
+.token-param    { color: #FFCB6B; }
+.token-attack   { color: #E5484D; font-weight: 500; }
+.token-defense  { color: #22D3EE; font-weight: 500; }
+
+/* ── FAQ accordion ──────────────────────────────────────── */
+.faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.faq-answer.open {
+  grid-template-rows: 1fr;
+}
+.faq-answer > div {
+  overflow: hidden;
 }
