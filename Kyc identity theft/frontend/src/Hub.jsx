@@ -1,7 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// ─── Lab data (5 non-KYC labs + KYC as the flagship) ────────────────────────
+// ─── Lab data — all 6 labs including the flagship KYC live app ───────────────
 const LABS = [
+  {
+    slug: 'kyc',
+    href: '/kyc',
+    title: 'KYC Identity Theft',
+    live: true,
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" strokeOpacity="0.5"/>
+      </svg>
+    ),
+    attackSummary: 'Deepfake video injection & synthetic ID passed to a KYC liveness check',
+    defenseSummary: 'Randomized optical Flash-PAD + action challenge → ArcFace 1:1 verdict',
+    tags: ['FastAPI', 'ONNX', 'WebSocket', 'React'],
+  },
   {
     slug: 'distributed-cvv-guessing',
     href: '/labs/distributed-cvv-guessing/index.html',
@@ -297,7 +313,15 @@ const LabCard = ({ lab }) => (
 
     {/* Footer: lab name + tags + CTA */}
     <div className="px-5 py-4 border-t border-argos-border bg-[#111316]">
-      <h3 className="text-sm font-semibold text-argos-text font-grotesk mb-2">{lab.title}</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold text-argos-text font-grotesk">{lab.title}</h3>
+        {lab.live && (
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
+            LIVE
+          </span>
+        )}
+      </div>
       <div className="flex flex-wrap gap-1.5 mb-3">
         {lab.tags.map(t => (
           <span key={t} className="px-2 py-0.5 rounded text-[10px] font-mono text-argos-muted bg-argos-bg border border-argos-border">
@@ -516,53 +540,17 @@ export const Hub = () => {
 
       {/* ═══ 4. LABS GRID ═══════════════════════════════════════════════════════ */}
       <section id="labs" className="relative z-10 mx-auto max-w-7xl px-6 py-20 scroll-mt-20">
-        {/* KYC — flagship banner */}
-        <a
-          href="/kyc"
-          className="group block mb-6 rounded-lg border border-argos-border bg-argos-surface overflow-hidden
-                     hover:border-attack/40 transition-all duration-300 hover:-translate-y-0.5"
-        >
-          <div className="flex flex-col md:flex-row">
-            <div className="flex-1 p-6 border-b md:border-b-0 md:border-r border-argos-border bg-gradient-to-br from-attack/5 to-transparent">
-              <span className="text-[10px] font-mono tracking-widest text-attack uppercase">Attack</span>
-              <p className="mt-2 text-sm text-argos-muted">Deepfake video injection & synthetic ID passed to a KYC liveness check</p>
-            </div>
-            <div className="flex-1 p-6 bg-gradient-to-br from-defense/5 to-transparent">
-              <span className="text-[10px] font-mono tracking-widest text-defense uppercase">Defense</span>
-              <p className="mt-2 text-sm text-argos-muted">Randomized optical Flash-PAD + action challenge → ArcFace 1:1 verdict</p>
-            </div>
-            <div className="p-6 flex flex-col justify-between border-t md:border-t-0 md:border-l border-argos-border min-w-[200px]">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>LIVE APP
-                  </span>
-                </div>
-                <h3 className="font-grotesk font-semibold text-argos-text">KYC Identity Theft</h3>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {['FastAPI', 'ONNX', 'WebSocket'].map(t => (
-                    <span key={t} className="px-2 py-0.5 rounded text-[10px] font-mono text-argos-muted bg-argos-bg border border-argos-border">{t}</span>
-                  ))}
-                </div>
-              </div>
-              <span className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-argos-muted group-hover:text-argos-text transition-colors">
-                View Lab →
-              </span>
-            </div>
-          </div>
-        </a>
-
         {/* Section header */}
         <div className="mb-8">
           <h2 className="font-grotesk font-bold text-3xl lg:text-4xl tracking-tight text-argos-text">
-            Five Labs. Five Attacks. Five Defenses.
+            Six Labs. Six Attacks. Six Defenses.
           </h2>
           <p className="mt-3 text-argos-muted max-w-xl">
-            Each lab is an independent, self-contained red-team/blue-team simulation you can run today.
+            Each lab is an independent, self-contained red-team / blue-team simulation you can run today.
           </p>
         </div>
 
-        {/* 5 lab cards grid: 3 + 2 */}
+        {/* 6 lab cards grid: 3 + 3 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {LABS.map(lab => <LabCard key={lab.slug} lab={lab}/>)}
         </div>
