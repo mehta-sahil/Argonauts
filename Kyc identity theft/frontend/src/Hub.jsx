@@ -70,12 +70,7 @@ const LABS = [
   },
 ];
 
-const STATS = [
-  { value: '5', label: 'Attack Labs' },
-  { value: '5', label: 'Defense Systems' },
-  { value: '0', label: 'Real Payment Networks Touched' },
-  { value: '100%', label: 'Sandboxed' },
-];
+
 
 const HEADLINES = [
   'Simulate the attack.',
@@ -412,7 +407,7 @@ export const Hub = () => {
 
           {/* Nav links — desktop */}
           <div className="hidden lg:flex items-center gap-1">
-            {['Labs', 'How It Works', 'Architecture', 'Contribute', 'Docs'].map(link => (
+            {['Labs', 'How It Works', 'Contribute'].map(link => (
               <a
                 key={link}
                 href={`#${link.toLowerCase().replace(/\s+/g, '-')}`}
@@ -456,7 +451,7 @@ export const Hub = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-attack/25 bg-attack/8 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-attack animate-pulse"/>
               <span className="text-[11px] font-mono font-medium tracking-[0.2em] text-attack uppercase">
-                Open-Source Fraud Research
+                Mastercard Innovation Challenge 2026 · Global Fintech Fest
               </span>
             </div>
 
@@ -517,21 +512,7 @@ export const Hub = () => {
         </div>
       </section>
 
-      {/* ═══ 3. TRUST / STAT STRIP ══════════════════════════════════════════════ */}
-      <div className="relative z-10 border-y border-argos-border bg-argos-surface/40">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-argos-border">
-            {STATS.map(({ value, label }) => (
-              <div key={label} className="flex flex-col items-center justify-center py-6 px-4 text-center">
-                <span className="font-grotesk font-bold text-3xl text-argos-text tabular-nums">
-                  {value}
-                </span>
-                <span className="mt-1 text-[12px] font-medium text-argos-muted leading-tight">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+
 
       {/* ═══ 4. LABS GRID ═══════════════════════════════════════════════════════ */}
       <section id="labs" className="relative z-10 mx-auto max-w-7xl px-6 py-20 scroll-mt-20">
@@ -696,100 +677,9 @@ export const Hub = () => {
         </div>
       </section>
 
-      {/* ═══ 7. ARCHITECTURE STRIP ════════════════════════════════════════════════ */}
-      <section id="architecture" className="relative z-10 border-y border-argos-border bg-argos-surface/30 py-20 scroll-mt-20">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mb-10">
-            <span className="text-[10px] font-mono tracking-widest text-argos-muted uppercase">Architecture</span>
-            <h2 className="mt-2 font-grotesk font-bold text-3xl lg:text-4xl tracking-tight text-argos-text">
-              SOC Dashboard — live widgets
-            </h2>
-          </div>
 
-          {/* 4 stat widgets */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {[
-              { label: 'Attacks Simulated', value: '12,847', delta: '+340 today', color: 'attack' },
-              { label: 'Detection Latency', value: '38 ms', delta: 'p95 mean', color: 'defense' },
-              { label: 'Model Confidence', value: '94.2%', delta: 'GraphSAGE', color: 'defense' },
-              { label: 'Blocked Amount', value: '$1.4 M', delta: 'synthetic USD', color: 'attack' },
-            ].map(({ label, value, delta, color }) => (
-              <div key={label} className="rounded-lg border border-argos-border bg-argos-bg p-5">
-                <div className={`text-[10px] font-mono tracking-widest uppercase mb-3 ${color === 'attack' ? 'text-attack' : 'text-defense'}`}>
-                  {label}
-                </div>
-                <div className="font-grotesk font-bold text-2xl text-argos-text tabular-nums">{value}</div>
-                <div className="mt-1 text-[11px] text-argos-muted font-mono">{delta}</div>
-                {/* Mini sparkline bar */}
-                <div className="mt-3 h-1 rounded-full bg-argos-border overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${color === 'attack' ? 'bg-attack/60' : 'bg-defense/60'} shimmer-bar`}
-                    style={{ width: color === 'attack' ? '72%' : '88%' }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
 
-          {/* Tech stack logos/labels */}
-          <div className="rounded-lg border border-argos-border bg-argos-bg px-6 py-4">
-            <div className="text-[10px] font-mono tracking-widest text-argos-muted uppercase mb-4">Stack</div>
-            <div className="flex flex-wrap gap-3">
-              {[
-                'AWS Lambda', 'DynamoDB Streams', 'GraphSAGE', 'LLM Agent', 'Policy Engine',
-                'FastAPI', 'ONNX Runtime', 'LightGBM', 'Gemini API', 'scikit-learn',
-              ].map(tech => (
-                <span
-                  key={tech}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-argos-border
-                             text-[11px] font-mono text-argos-muted hover:border-defense/40 hover:text-defense
-                             transition-colors cursor-default"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-argos-border"/>
-                  {tech}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ═══ 8. RESULTS / METRICS ═══════════════════════════════════════════════ */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 py-20">
-        <div className="mb-12">
-          <span className="text-[10px] font-mono tracking-widest text-argos-muted uppercase">Results</span>
-          <h2 className="mt-2 font-grotesk font-bold text-3xl lg:text-4xl tracking-tight text-argos-text">
-            Numbers, not assertions.
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { stat: 'XX%', desc: 'Attacks caught by deterministic gates alone', accent: 'defense' },
-            { stat: 'XXms', desc: 'Mean end-to-end detection latency', accent: 'defense' },
-            { stat: '0', desc: 'Real payment credentials used across all labs', accent: 'attack' },
-            { stat: 'XX%', desc: 'ML-layer F1 on held-out synthetic test set', accent: 'defense' },
-          ].map(({ stat, desc, accent }) => (
-            <div key={stat + desc} className="group relative">
-              <div className="text-[10px] font-mono tracking-widest text-argos-muted uppercase mb-2">
-                {accent === 'attack' ? '— Red Team' : '— Blue Team'}
-              </div>
-              <div
-                className={`font-grotesk font-bold text-4xl lg:text-5xl tabular-nums mb-3 ${
-                  accent === 'attack' ? 'text-attack' : 'text-defense'
-                }`}
-              >
-                {stat}
-              </div>
-              <p className="text-[13px] leading-[1.6] text-argos-muted">{desc}</p>
-              <div className={`mt-4 h-px ${accent === 'attack' ? 'bg-attack/25' : 'bg-defense/25'}`}/>
-              <div className="mt-1 text-[10px] font-mono text-argos-border">
-                fill with real run data
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* ═══ 9. CONTRIBUTE ══════════════════════════════════════════════════════ */}
       <section id="contribute" className="relative z-10 border-y border-argos-border bg-argos-surface/30 py-20 scroll-mt-20">
