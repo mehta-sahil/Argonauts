@@ -466,8 +466,8 @@ export const Hub = () => {
       {/* ═══ 0. Background grid ════════════════════════════════════════════════ */}
       <div aria-hidden className="pointer-events-none fixed inset-0 bg-grid opacity-100" />
       {/* Ambient glows */}
-      <div aria-hidden className="pointer-events-none fixed -top-64 -left-64 w-[700px] h-[700px] rounded-full bg-attack/8 blur-[160px]"/>
-      <div aria-hidden className="pointer-events-none fixed top-1/2 -right-64 w-[600px] h-[600px] rounded-full bg-defense/6 blur-[160px]"/>
+      <div aria-hidden className="pointer-events-none fixed -top-64 -left-64 w-[700px] h-[700px] rounded-full bg-attack/10 blur-[160px] anim-orb-1"/>
+      <div aria-hidden className="pointer-events-none fixed top-1/2 -right-64 w-[650px] h-[650px] rounded-full bg-defense/10 blur-[160px] anim-orb-2"/>
 
       {/* ═══ 1. STICKY NAVBAR ══════════════════════════════════════════════════ */}
       <header
@@ -480,7 +480,7 @@ export const Hub = () => {
         <nav className="mx-auto max-w-7xl flex items-center justify-between px-6 h-16">
           {/* Wordmark */}
           <a href="/" className="flex items-center gap-3 group">
-            <svg viewBox="0 0 32 32" className="w-7 h-7 shrink-0" aria-hidden>
+            <svg viewBox="0 0 32 32" className="w-7 h-7 shrink-0 transition-transform duration-300 group-hover:scale-110" aria-hidden>
               <path d="M16 2 L28 8 L28 22 Q28 29 16 30 Q4 29 4 22 L4 8 Z"
                 fill="#0A0B0D" stroke="#E5484D" strokeWidth="1.5"/>
               <path d="M16 8 L22 11 L22 20 Q22 24 16 26 Q10 24 10 20 L10 11 Z"
@@ -498,7 +498,7 @@ export const Hub = () => {
               <a
                 key={link}
                 href={`#${link.toLowerCase().replace(/\s+/g, '-')}`}
-                className="px-3 py-1.5 text-[13px] font-medium text-argos-muted hover:text-argos-text transition-colors rounded"
+                className="px-3 py-1.5 text-[13px] font-medium text-argos-muted hover:text-argos-text hover:bg-argos-surface/60 transition-all rounded"
               >
                 {link}
               </a>
@@ -566,7 +566,7 @@ export const Hub = () => {
               <a
                 href="#labs"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded text-sm font-semibold
-                           bg-attack text-white hover:bg-attack/90 transition-colors shadow-lg shadow-attack/20"
+                           bg-attack text-white hover:bg-attack/90 hover:shadow-attack/30 hover:scale-[1.02] transition-all shadow-lg shadow-attack/20"
               >
                 Explore the Labs
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 -mt-px">
@@ -578,7 +578,7 @@ export const Hub = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded text-sm font-semibold
-                           border border-argos-border text-argos-text hover:bg-argos-surface hover:border-argos-muted
+                           border border-argos-border text-argos-text hover:bg-argos-surface hover:border-argos-muted hover:scale-[1.02]
                            transition-all duration-200"
               >
                 <svg viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
@@ -598,8 +598,6 @@ export const Hub = () => {
           </div>
         </div>
       </section>
-
-
 
       {/* ═══ 4. LABS GRID ═══════════════════════════════════════════════════════ */}
       <section id="labs" className="relative z-10 mx-auto max-w-7xl px-6 py-20 scroll-mt-20">
@@ -632,17 +630,17 @@ export const Hub = () => {
 
           <div className="grid lg:grid-cols-3 gap-px bg-argos-border rounded-lg overflow-hidden">
             {HOW_IT_WORKS.map(({ n, title, body }, i) => (
-              <div key={n} className="bg-argos-bg p-8 relative">
+              <div key={n} className="bg-argos-bg p-8 relative group hover:bg-[#121418] transition-colors duration-300">
                 {/* Connector arrow (desktop) */}
                 {i < 2 && (
                   <div className="hidden lg:block absolute -right-[1px] top-1/2 -translate-y-1/2 z-10">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M8 12h8M13 8l4 4-4 4" stroke="#2A2D33" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M8 12h8M13 8l4 4-4 4" stroke="#3A3F4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
                 )}
-                <div className="font-mono text-[11px] font-medium text-argos-muted mb-4 tracking-widest">{n}</div>
-                <div className={`w-8 h-1 rounded mb-5 ${i === 0 ? 'bg-attack' : i === 1 ? 'bg-argos-muted' : 'bg-defense'}`}/>
+                <div className="font-mono text-[11px] font-medium text-argos-muted mb-4 tracking-widest group-hover:text-defense transition-colors">{n}</div>
+                <div className={`w-8 h-1 rounded mb-5 transition-all duration-300 group-hover:w-16 ${i === 0 ? 'bg-attack' : i === 1 ? 'bg-argos-muted' : 'bg-defense'}`}/>
                 <h3 className="font-grotesk font-semibold text-lg text-argos-text mb-3">{title}</h3>
                 <p className="text-[14px] leading-[1.7] text-argos-muted">{body}</p>
               </div>
@@ -660,8 +658,11 @@ export const Hub = () => {
           </h2>
         </div>
 
-        {/* Code editor card */}
-        <div className="rounded-lg border border-argos-border overflow-hidden shadow-2xl shadow-black/40">
+        {/* Code editor card with animated scanline */}
+        <div className="relative rounded-lg border border-argos-border overflow-hidden shadow-2xl shadow-black/40">
+          {/* Cyber Scanline Animation */}
+          <div className="anim-scanline" />
+
           {/* Window chrome */}
           <div className="flex items-center gap-2 px-4 py-3 bg-[#0E1012] border-b border-argos-border">
             <span className="w-3 h-3 rounded-full bg-[#FF5F56]"/>
@@ -716,7 +717,7 @@ export const Hub = () => {
                     <td className={`py-0.5 pr-6 whitespace-pre ${attack ? 'text-attack/90' : 'text-[#CDD6F4]'}`}>
                       {line}
                       {attack && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-mono bg-attack/15 border border-attack/30 text-attack px-1.5 py-0.5 rounded">
+                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-mono bg-attack/15 border border-attack/30 text-attack px-1.5 py-0.5 rounded anim-pulse-badge">
                           ⚠ attack pattern detected
                         </span>
                       )}
