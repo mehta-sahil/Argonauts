@@ -5,61 +5,83 @@ from app.models import VerdictReport, VerdictResultEnum, RiskLevelEnum
 from app.session import SessionState
 
 
+# Every telemetry writer in ws_handler.py records exactly "PASSED" or "FAILED".
+# Any other value — including the initial "PENDING" — means the check never
+# completed, which must count as a failure rather than being waved through.
+PASS_STATUS = "PASSED"
+
+FAKE_SCORE_MAX = 0.20
+SIMILARITY_MIN = 0.85
+
+# Margins above the hard thresholds below which a pass is still only MEDIUM risk.
+SIMILARITY_STRONG = 0.88
+FAKE_SCORE_STRONG = 0.14
+
+
 class VerdictEngine:
+    @staticmethod
+    def _passed(telemetry: Dict[str, Any], key: str) -> bool:
+        """A check counts as passed only if it explicitly reported PASSED."""
+        return telemetry.get(key, {}).get("status") == PASS_STATUS
+
+    @staticmethod
+    def _score(telemetry: Dict[str, Any], key: str) -> Any:
+        """Returns a check's numeric value, or None if it was never computed."""
+        value = telemetry.get(key, {}).get("value")
+        return value if isinstance(value, (int, float)) else None
+
     @staticmethod
     def evaluate(session: SessionState) -> VerdictReport:
         """
         Evaluates the global Mastercard KYC Decision Matrix:
-        PASS = Automation==FALSE and VirtualCam==FALSE and FlashPAD==PASS 
+        PASS = Automation==FALSE and VirtualCam==FALSE and FlashPAD==PASS
                and Action==PASS and FakeScore<0.20 and CosineSim>=0.85
+
+        Every check fails closed: a missing, pending or non-numeric result is
+        treated as a failure, never as a pass.
         """
         telemetry = session.telemetry
+        passed = VerdictEngine._passed
         fraud_flags = []
-        
+
         # 1. Automation Check
-        auto_check = telemetry.get("automation", {})
-        if auto_check.get("status") != "PASSED":
+        if not passed(telemetry, "automation"):
             fraud_flags.append("BOT_AUTOMATION_DETECTED")
-            
+
         # 2. Camera Driver & Loopback
-        cam_check = telemetry.get("camera_driver", {})
-        if cam_check.get("status") not in ["HARDWARE_OK", "PASSED"]:
+        if not passed(telemetry, "camera_driver"):
             fraud_flags.append("VIRTUAL_CAMERA_INJECTION")
-            
+
         # 3. Frame Jitter
-        jitter_check = telemetry.get("frame_jitter", {})
-        if jitter_check.get("status") == "SYNTHETIC":
+        if not passed(telemetry, "frame_jitter"):
             fraud_flags.append("SYNTHETIC_FRAME_PACING")
-            
+
         # 4. Flash-PAD Optical Sync
-        flash_check = telemetry.get("flash_pad", {})
-        if flash_check.get("status") not in ["PASS", "PASSED"]:
+        if not passed(telemetry, "flash_pad"):
             fraud_flags.append("OPTICAL_REFLECTION_MISMATCH")
-            
+
         # 5. Dynamic Action Challenge
-        action_check = telemetry.get("action_challenge", {})
-        if action_check.get("status") not in ["PASS", "PASSED"]:
+        if not passed(telemetry, "action_challenge"):
             fraud_flags.append("LIVENESS_ACTION_FAILED")
-            
+
         # 6. Deepfake AI Fake Score (< 0.20)
-        fake_check = telemetry.get("ai_fake_score", {})
-        fake_score = fake_check.get("value", 0.08)
-        if fake_score is not None and fake_score >= 0.20:
+        fake_score = VerdictEngine._score(telemetry, "ai_fake_score")
+        if fake_score is None or fake_score >= FAKE_SCORE_MAX:
             fraud_flags.append("AI_SYNTHETIC_DEEPFAKE_DETECTED")
-            
+
         # 7. 1:1 Face Match Cosine Similarity (>= 0.85)
-        face_check = telemetry.get("face_match", {})
-        similarity = face_check.get("value", 0.90)
-        if similarity is None or similarity < 0.85:
+        similarity = VerdictEngine._score(telemetry, "face_match")
+        if similarity is None or similarity < SIMILARITY_MIN:
             fraud_flags.append("IDENTITY_FACIAL_MISMATCH")
-            
+
         # Global decision
         is_passed = len(fraud_flags) == 0
-        
+
         if is_passed:
             result = VerdictResultEnum.VERIFIED
-            # Check for borderline scores
-            if similarity < 0.88 or (fake_score is not None and fake_score > 0.14):
+            # Both scores are guaranteed non-None here: a missing value would
+            # have raised a fraud flag above.
+            if similarity < SIMILARITY_STRONG or fake_score > FAKE_SCORE_STRONG:
                 risk_level = RiskLevelEnum.MEDIUM
                 summary = "KYC VERIFIED — ACCEPTABLE MARGIN (LOW/MEDIUM RISK)"
             else:

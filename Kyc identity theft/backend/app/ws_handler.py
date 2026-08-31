@@ -78,6 +78,10 @@ class WebSocketHandler:
             print(f"[WebSocket] Error in session {session_id}: {e}")
         finally:
             orchestrator_task.cancel()
+            # The decoded frame buffer is the bulk of a session's memory and is of
+            # no further use once the connection is over. The session itself stays
+            # until the sweeper evicts it, so the verdict remains fetchable.
+            session.release_frames()
 
     @staticmethod
     async def _handle_env_data(websocket: WebSocket, session: SessionState, msg: dict):

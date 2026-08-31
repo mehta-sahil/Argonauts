@@ -186,7 +186,9 @@ def test_verdict_decision_matrix():
     
     # Configure all passing telemetry
     session.telemetry["automation"] = {"status": "PASSED"}
-    session.telemetry["camera_driver"] = {"status": "HARDWARE_OK"}
+    # ws_handler only ever writes "PASSED"/"FAILED"; the verdict engine requires
+    # an explicit "PASSED" so that a pending or unknown status cannot pass.
+    session.telemetry["camera_driver"] = {"status": "PASSED"}
     session.telemetry["frame_jitter"] = {"status": "PASSED"}
     session.telemetry["flash_pad"] = {"status": "PASSED"}
     session.telemetry["action_challenge"] = {"status": "PASSED"}
@@ -206,6 +208,39 @@ def test_verdict_decision_matrix():
     assert report_fail.result == VerdictResultEnum.FAILED
     assert report_fail.risk_level == RiskLevelEnum.HIGH
     assert "AI_SYNTHETIC_DEEPFAKE_DETECTED" in report_fail.fraud_flags
+
+
+def test_verdict_fails_closed_on_incomplete_checks():
+    """Regressions: a check that never produced a result must not be waved through."""
+    def passing_session():
+        s = session_manager.create_session()
+        for key in s.telemetry:
+            s.telemetry[key] = {"status": "PASSED", "value": 1.0}
+        s.telemetry["ai_fake_score"] = {"status": "PASSED", "value": 0.06}
+        s.telemetry["face_match"] = {"status": "PASSED", "value": 0.94}
+        return s
+
+    # Baseline: the fully-passing session really does verify.
+    assert verdict_engine.evaluate(passing_session()).result == VerdictResultEnum.VERIFIED
+
+    # Synthetic frame pacing is reported as FAILED, not as the literal "SYNTHETIC".
+    s = passing_session()
+    s.telemetry["frame_jitter"] = {"status": "FAILED", "value": 0.0}
+    report = verdict_engine.evaluate(s)
+    assert report.result == VerdictResultEnum.FAILED
+    assert "SYNTHETIC_FRAME_PACING" in report.fraud_flags
+
+    # A score of None means forensics never ran, which must fail rather than pass.
+    s = passing_session()
+    s.telemetry["ai_fake_score"] = {"status": "FAILED", "value": None}
+    report = verdict_engine.evaluate(s)
+    assert report.result == VerdictResultEnum.FAILED
+    assert "AI_SYNTHETIC_DEEPFAKE_DETECTED" in report.fraud_flags
+
+    # An untouched session must fail every one of the seven checks.
+    report = verdict_engine.evaluate(session_manager.create_session())
+    assert report.result == VerdictResultEnum.FAILED
+    assert len(report.fraud_flags) == 7
 
 
 def test_upload_id_api():

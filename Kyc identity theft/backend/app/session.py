@@ -89,6 +89,14 @@ class SessionState:
     def get_recent_frames(self, count: int = 10) -> List[BufferedFrame]:
         return list(self.frame_buffer)[-count:]
 
+    def release_frames(self):
+        """
+        Drops the decoded frame buffer. This is the bulk of a session's memory
+        (up to 100 x 640x480x3 BGR arrays, ~92 MB), and it is dead weight once the
+        verdict has been produced. The verdict report itself is retained.
+        """
+        self.frame_buffer.clear()
+
 
 class SessionManager:
     _instance = None
@@ -109,14 +117,17 @@ class SessionManager:
         return self.sessions.get(session_id)
 
     def remove_session(self, session_id: str):
-        if session_id in self.sessions:
-            del self.sessions[session_id]
+        session = self.sessions.pop(session_id, None)
+        if session is not None:
+            session.release_frames()
 
-    def cleanup_old_sessions(self, max_age_seconds: int = 600):
+    def cleanup_old_sessions(self, max_age_seconds: int = 600) -> int:
+        """Evicts sessions older than max_age_seconds. Returns the number removed."""
         now = time.time()
         expired = [sid for sid, s in self.sessions.items() if (now - s.created_at) > max_age_seconds]
         for sid in expired:
             self.remove_session(sid)
+        return len(expired)
 
 
 session_manager = SessionManager()

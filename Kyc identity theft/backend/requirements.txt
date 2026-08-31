@@ -2,7 +2,10 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 websockets>=13.1
 python-multipart>=0.0.12
-opencv-python-headless>=4.10.0.84
+# OpenCV 5.x dropped the bundled Haar cascade XMLs from cv2/data, which silently
+# disables face detection in face_matcher.py. Stay on 4.x until we move to YuNet.
+opencv-python-headless>=4.10.0.84,<5.0
+# This numpy range has no wheels for Python 3.13+; see .python-version.
 numpy>=1.26.0,<2.2.0
 Pillow>=10.4.0
 onnxruntime>=1.19.0

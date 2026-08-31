@@ -1,0 +1,80 @@
+name: KYC backend image
+
+# Builds the backend container and pushes it to ECR. Runs the test suite inside
+# the built image first, so a broken image is never published.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Kyc identity theft/backend/**'
+      - 'Kyc identity theft/models/**'
+      - 'Kyc identity theft/Dockerfile'
+      - 'Kyc identity theft/.dockerignore'
+      - '.github/workflows/kyc-backend-image.yml'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: kyc-backend
+
+permissions:
+  id-token: write   # required to request the OIDC token
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assume AWS role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Loaded into the local daemon rather than pushed, so the tests below run
+      # against the exact image that will be published.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: "./Kyc identity theft"
+          file: "./Kyc identity theft/Dockerfile"
+          platforms: linux/amd64
+          load: true
+          tags: kyc-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run test suite inside the image
+        run: docker run --rm kyc-backend:ci python -m pytest tests/ -v
+
+      - name: Smoke-test the app boots and models load
+        run: |
+          docker run --rm kyc-backend:ci python -c "
+          from app.face_matcher import face_matcher
+          from app.main import app
+          assert face_matcher.arcface_session is not None, 'ArcFace not loaded'
+          assert face_matcher.haar_cascade is not None, 'Haar cascade not loaded'
+          print('boot OK from', face_matcher.models_dir)
+          "
+
+      - name: Push to ECR
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          set -euo pipefail
+          IMAGE="$REGISTRY/$ECR_REPOSITORY"
+          docker tag kyc-backend:ci "$IMAGE:${GITHUB_SHA}"
+          docker tag kyc-backend:ci "$IMAGE:latest"
+          docker push "$IMAGE:${GITHUB_SHA}"
+          docker push "$IMAGE:latest"
+          echo "### Pushed \`$IMAGE:${GITHUB_SHA}\`" >> "$GITHUB_STEP_SUMMARY"

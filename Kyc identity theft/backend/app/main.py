@@ -1,7 +1,10 @@
 import io
+import os
 import time
+import asyncio
 import cv2
 import numpy as np
+from contextlib import asynccontextmanager
 from PIL import Image
 from fastapi import FastAPI, UploadFile, File, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,18 +15,61 @@ from app.session import session_manager
 from app.face_matcher import face_matcher
 from app.ws_handler import WebSocketHandler
 
+# Sessions are held in memory and each one buffers up to 100 decoded frames
+# (~92 MB). Without an eviction sweep, abandoned sessions accumulate until the
+# process is OOM-killed.
+SESSION_SWEEP_INTERVAL_S = 60
+SESSION_MAX_AGE_S = 600
+
+
+async def _session_sweeper():
+    while True:
+        await asyncio.sleep(SESSION_SWEEP_INTERVAL_S)
+        try:
+            removed = session_manager.cleanup_old_sessions(SESSION_MAX_AGE_S)
+            if removed:
+                print(f"[Sessions] Evicted {removed} expired session(s); "
+                      f"{len(session_manager.sessions)} active.")
+        except Exception as e:
+            print(f"[Sessions] Sweep error: {e}")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    sweeper = asyncio.create_task(_session_sweeper())
+    try:
+        yield
+    finally:
+        sweeper.cancel()
+        try:
+            await sweeper
+        except asyncio.CancelledError:
+            pass
+
+
 app = FastAPI(
     title="Mastercard AI Defense Lab — Automated KYC Verification",
     description="End-to-end deepfake-resistant KYC verification pipeline",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
-# Enable CORS for Vite dev frontend
+# Explicit origin allowlist. "*" combined with allow_credentials is invalid per the
+# CORS spec, and Starlette resolves it by echoing back whatever Origin the caller
+# sent — so any website could drive this API with the user's credentials. Set
+# KYC_ALLOWED_ORIGINS (comma-separated) to the deployed frontend origin.
+DEFAULT_ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("KYC_ALLOWED_ORIGINS", DEFAULT_ALLOWED_ORIGINS).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 

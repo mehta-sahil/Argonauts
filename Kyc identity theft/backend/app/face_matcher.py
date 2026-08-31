@@ -2,19 +2,31 @@ import os
 import cv2
 import numpy as np
 import base64
+from pathlib import Path
 from typing import Tuple, Optional, List, Dict, Any
+
+# Model assets live at <project root>/models, a sibling of backend/. Resolving this
+# relative to the current working directory silently yields an empty directory
+# depending on where uvicorn was launched from, so anchor it to this file instead.
+DEFAULT_MODELS_DIR = str(Path(__file__).resolve().parents[2] / "models")
 
 
 class FaceMatcher:
-    def __init__(self, models_dir: str = "models"):
-        self.models_dir = models_dir
-        os.makedirs(models_dir, exist_ok=True)
-        
+    def __init__(self, models_dir: Optional[str] = None):
+        self.models_dir = models_dir or os.environ.get("KYC_MODELS_DIR") or DEFAULT_MODELS_DIR
+        if not os.path.isdir(self.models_dir):
+            print(f"[FaceMatcher] Models directory not found: {self.models_dir}. "
+                  f"Set KYC_MODELS_DIR to override.")
+
         # Haar cascade fallback for face detection
         self.haar_cascade = None
         haar_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
         if os.path.exists(haar_path):
             self.haar_cascade = cv2.CascadeClassifier(haar_path)
+        else:
+            print(f"[FaceMatcher] WARNING: Haar cascade missing at {haar_path}. "
+                  f"detect_face() will accept any image via its centre-crop fallback. "
+                  f"This usually means OpenCV 5.x is installed; pin opencv-python-headless<5.0.")
 
         # ArcFace ResNet ONNX Embedding Engine
         self.arcface_session = None

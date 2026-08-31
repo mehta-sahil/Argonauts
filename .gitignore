@@ -31,3 +31,6 @@ voice-auth-bypass/data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local Claude Code permission rules (personal, not for the repo)
+.claude/settings.local.json

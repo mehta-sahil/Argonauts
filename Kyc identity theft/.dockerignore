@@ -1,0 +1,21 @@
+# Frontend ships to S3/CloudFront, not into the backend image.
+frontend/
+
+# Docs, tickets and the red-team toolkit are not runtime dependencies.
+docs/
+tickets/
+redteam/
+*.md
+
+# The ArcFace weights are fetched in the modelfetch stage; only YuNet is copied
+# from the build context. Do not exclude models/ wholesale.
+models/download_models.py
+
+# Local environments and caches
+**/venv/
+**/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+.git/
+.gitignore
