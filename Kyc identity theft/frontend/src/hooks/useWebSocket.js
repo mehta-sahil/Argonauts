@@ -18,9 +18,24 @@ export const useWebSocket = (sessionId, onMessageReceived) => {
       wsRef.current.close();
     }
 
-    const host = window.location.hostname || "localhost";
-    const port = "8000";
-    const wsUrl = `ws://${host}:${port}/ws/${sessionId}`;
+    // Derive the WebSocket URL from where the page is served.
+    // - In production the app is served over HTTPS behind CloudFront/ALB on the
+    //   same origin as the API, so use wss:// with no explicit port (an HTTPS
+    //   page cannot open an insecure ws:// socket — the browser blocks it).
+    // - In Vite dev the page is on :5173 while the backend is on :8000, so fall
+    //   back to that port. Override with VITE_WS_URL for any other setup.
+    let wsUrl;
+    if (import.meta.env.VITE_WS_URL) {
+      wsUrl = `${import.meta.env.VITE_WS_URL.replace(/\/$/, "")}/ws/${sessionId}`;
+    } else {
+      const isSecure = window.location.protocol === "https:";
+      const proto = isSecure ? "wss" : "ws";
+      const host = window.location.hostname || "localhost";
+      // Same-origin behind a proxy: reuse the page's port (empty for 443/80).
+      // Dev over plain http on any host: target the backend on :8000.
+      const port = isSecure ? (window.location.port ? `:${window.location.port}` : "") : ":8000";
+      wsUrl = `${proto}://${host}${port}/ws/${sessionId}`;
+    }
 
     console.log(`[WebSocket] Connecting to ${wsUrl}...`);
     const ws = new WebSocket(wsUrl);
