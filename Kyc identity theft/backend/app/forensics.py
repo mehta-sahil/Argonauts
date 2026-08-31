@@ -1,17 +1,34 @@
 import os
 import cv2
 import numpy as np
+from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional
+
+# Where the FaceForensics++ EfficientNet-B0 checkpoint is expected. Nothing
+# pointed at it before, so the neural branch could never run no matter what was
+# on disk. Drop the .pth here (or set KYC_DEEPFAKE_MODEL) and it loads.
+DEFAULT_MODELS_DIR = str(Path(__file__).resolve().parents[2] / "models")
+DEEPFAKE_CHECKPOINT = "deepfake_efficientnet_b0.pth"
 
 class DeepfakeForensics:
     def __init__(self, model_path: Optional[str] = None):
-        self.model_path = model_path
+        self.model_path = model_path or self._default_checkpoint()
         self.model = None
+        self.load_error: Optional[str] = None
         self._load_model()
+
+    @staticmethod
+    def _default_checkpoint() -> str:
+        models_dir = os.environ.get("KYC_MODELS_DIR") or DEFAULT_MODELS_DIR
+        return os.environ.get("KYC_DEEPFAKE_MODEL") or os.path.join(models_dir, DEEPFAKE_CHECKPOINT)
 
     def _load_model(self):
         """Loads neural deepfake classifier if checkpoint exists."""
-        if self.model_path and os.path.exists(self.model_path):
+        if not self.model_path or not os.path.exists(self.model_path):
+            self.load_error = f"no checkpoint at {self.model_path}"
+            print(f"[Forensics] {self.load_error} — heuristics only.")
+            return
+        if True:
             try:
                 import torch
                 import torchvision.models as models
@@ -20,8 +37,12 @@ class DeepfakeForensics:
                 state_dict = torch.load(self.model_path, map_location="cpu")
                 self.model.load_state_dict(state_dict)
                 self.model.eval()
+                print(f"[Forensics] Loaded EfficientNet-B0 from {self.model_path}")
             except Exception as e:
-                print(f"[Forensics] Neural model load note: {e}. Utilizing advanced heuristic forensic classifier.")
+                # torch is not in requirements.txt (it would add ~800 MB to the
+                # image), so this is the expected path until it is installed.
+                self.load_error = str(e)
+                print(f"[Forensics] Neural model load failed: {e}. Falling back to heuristics.")
                 self.model = None
 
     def compute_sobel_residual(self, image_bgr: np.ndarray, bbox: Optional[List[int]]) -> Tuple[float, str, Dict[str, Any]]:

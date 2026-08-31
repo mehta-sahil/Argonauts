@@ -124,6 +124,19 @@ export const VideoPanel = ({
   }, [phase, flashConfig, onFlashColorChange]);
 
   return (
+    <>
+    {/* Flash-PAD emitter. Fixed to the viewport and fully opaque so the screen
+        itself becomes the light source — that reflected light off real skin is
+        what the backend measures. Tinting the video preview instead would
+        change the recorded pixels while leaving the face unlit. */}
+    {flashColor && (
+      <div
+        className="fixed inset-0 z-[100] pointer-events-none"
+        style={{ backgroundColor: flashColor, opacity: 1 }}
+        aria-hidden="true"
+      />
+    )}
+
     <div 
       className={`bg-navy-card/90 rounded-2xl border p-5 shadow-2xl backdrop-blur-sm relative overflow-hidden flex flex-col justify-between transition-colors duration-200 ${
         flashColor ? 'border-2 border-mc-amber shadow-[0_0_50px_rgba(247,158,27,0.3)]' : 'border-navy-border'
@@ -165,21 +178,9 @@ export const VideoPanel = ({
       {/* Main Video Viewport */}
       <div className="relative aspect-[4/3] w-full bg-navy-dark rounded-xl overflow-hidden border border-navy-border shadow-inner">
         
-        {/* Flash-PAD High-Illumination Color Overlay */}
-        {flashColor && (
-          <div
-            className="absolute inset-0 z-30 pointer-events-none transition-none shadow-[inset_0_0_100px_rgba(255,255,255,0.7)]"
-            style={{
-              backgroundColor: flashColor,
-              opacity: 0.88,
-              mixBlendMode: 'screen'
-            }}
-          />
-        )}
-
         {/* Flash-PAD Status Banner */}
         {flashColor && (
-          <div className="absolute top-3 sm:top-4 left-1/2 -translate-x-1/2 z-40 max-w-[92%] bg-navy-dark/95 text-white px-3 sm:px-4 py-1.5 rounded-full border-2 border-mc-amber text-[10px] sm:text-xs font-mono font-bold animate-pulse flex items-center space-x-2 shadow-2xl">
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[101] max-w-[92%] bg-navy-dark/95 text-white px-3 sm:px-4 py-1.5 rounded-full border-2 border-mc-amber text-[10px] sm:text-xs font-mono font-bold animate-pulse flex items-center space-x-2 shadow-2xl">
             <span className="w-2.5 h-2.5 rounded-full bg-mc-amber animate-ping shrink-0" />
             <span className="truncate">OPTICAL FLASH-PAD ACTIVE (400ms): {flashColor}</span>
           </div>
@@ -307,5 +308,6 @@ export const VideoPanel = ({
       </div>
 
     </div>
+    </>
   );
 };

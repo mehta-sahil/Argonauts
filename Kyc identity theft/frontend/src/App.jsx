@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { IDUpload } from './components/IDUpload';
+import { DeepfakeProbe } from './components/DeepfakeProbe';
 import { VideoPanel } from './components/VideoPanel';
 import { TelemetryPanel } from './components/TelemetryPanel';
 import { VerdictBar } from './components/VerdictBar';
@@ -234,6 +235,8 @@ export const App = () => {
               }}
               isSessionActive={isSessionActive}
             />
+
+            <DeepfakeProbe />
 
             <VideoPanel
               videoRef={videoRef}
