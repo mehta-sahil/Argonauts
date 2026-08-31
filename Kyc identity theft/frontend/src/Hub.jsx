@@ -7,6 +7,7 @@ const LABS = [
     href: '/kyc',
     title: 'KYC Identity Theft',
     live: true,
+    accent: '#E5484D',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -22,6 +23,7 @@ const LABS = [
     slug: 'distributed-cvv-guessing',
     href: '/labs/distributed-cvv-guessing/index.html',
     title: 'Distributed CVV Guessing',
+    accent: '#00C2FF',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
@@ -35,6 +37,7 @@ const LABS = [
     slug: 'mule-account-layering',
     href: '/labs/mule-account-layering/index.html',
     title: 'Mule-Account Layering',
+    accent: '#3DDC97',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <circle cx="12" cy="5" r="3"/><circle cx="4" cy="19" r="3"/><circle cx="20" cy="19" r="3"/>
@@ -49,6 +52,7 @@ const LABS = [
     slug: 'push-payment-scams',
     href: '/labs/push-payment-scams/index.html',
     title: 'Push-Payment Scams',
+    accent: '#A855F7',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -62,6 +66,7 @@ const LABS = [
     slug: 'chatbot-prompt-injection',
     href: '/labs/chatbot-prompt-injection/index.html',
     title: 'Chatbot Prompt Injection',
+    accent: '#F59E0B',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
@@ -75,6 +80,7 @@ const LABS = [
     slug: 'voice-auth-bypass',
     href: '/labs/voice-auth-bypass/index.html',
     title: 'Voice-Auth Bypass',
+    accent: '#38BDF8',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
@@ -279,65 +285,120 @@ const HeroSVG = () => (
 );
 
 // ─── LabCard component ────────────────────────────────────────────────────────
-const LabCard = ({ lab }) => (
-  <a
-    href={lab.href}
-    className="group relative flex flex-col overflow-hidden rounded-lg border border-argos-border bg-argos-surface
-               transition-all duration-300 hover:-translate-y-1 hover:border-attack/30 focus:outline-none focus:ring-2 focus:ring-attack/40"
-  >
-    {/* Top attack half */}
-    <div className="relative flex-1 p-5 border-b border-argos-border bg-gradient-to-br from-attack/5 to-transparent">
-      {/* Red tint accent line */}
-      <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-attack/50 to-transparent"/>
-      <div className="flex items-center gap-2.5 mb-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded border border-attack/20 bg-attack/10 text-attack">
-          {lab.icon}
-        </span>
-        <span className="text-[10px] font-mono font-medium tracking-widest text-attack uppercase">Attack</span>
-      </div>
-      <p className="text-[13px] leading-relaxed text-argos-muted">{lab.attackSummary}</p>
-    </div>
+const LabCard = ({ lab, index }) => {
+  const accent = lab.accent || '#E5484D';
+  const num = String(index + 1).padStart(2, '0');
+  return (
+    <a
+      href={lab.href}
+      className="group relative flex flex-col overflow-hidden rounded-lg border bg-argos-surface
+                 transition-all duration-300 hover:-translate-y-1.5 focus:outline-none focus:ring-2"
+      style={{
+        borderColor: '#2A2D33',
+        '--card-accent': accent,
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = accent + '55'; e.currentTarget.style.boxShadow = `0 0 0 1px ${accent}22, 0 8px 32px ${accent}18`; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2D33'; e.currentTarget.style.boxShadow = 'none'; }}
+    >
+      {/* Top accent line — full opacity, per-lab colour */}
+      <span
+        className="absolute inset-x-0 top-0 h-[2px] z-10"
+        style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
+      />
 
-    {/* Bottom defense half */}
-    <div className="relative flex-1 p-5 bg-gradient-to-br from-defense/5 to-transparent">
-      <div className="flex items-center gap-2.5 mb-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded border border-defense/20 bg-defense/10 text-defense">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      {/* Hover glow blob */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500"
+        style={{ backgroundColor: accent }}
+      />
+
+      {/* Attack half */}
+      <div
+        className="relative flex-1 p-5 border-b border-argos-border"
+        style={{ background: `linear-gradient(135deg, ${accent}10 0%, transparent 60%)` }}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            {/* Icon with per-lab accent */}
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded"
+              style={{ backgroundColor: accent + '18', border: `1px solid ${accent}35`, color: accent }}
+            >
+              {lab.icon}
+            </span>
+            <span
+              className="text-[10px] font-mono font-semibold tracking-widest uppercase"
+              style={{ color: '#E5484D' }}
+            >
+              ⬡ Attack
+            </span>
+          </div>
+          {/* Sequential number */}
+          <span
+            className="font-mono text-[11px] font-bold tabular-nums"
+            style={{ color: accent + 'AA' }}
+          >
+            {num}
+          </span>
+        </div>
+        <p className="text-[13px] leading-relaxed text-argos-muted">{lab.attackSummary}</p>
+      </div>
+
+      {/* Defense half */}
+      <div
+        className="relative flex-1 p-5"
+        style={{ background: 'linear-gradient(135deg, #22D3EE0D 0%, transparent 60%)' }}
+      >
+        <div className="flex items-center gap-2.5 mb-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded border border-defense/25 bg-defense/10 text-defense">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </span>
+          <span className="text-[10px] font-mono font-semibold tracking-widest text-defense uppercase">⬡ Defense</span>
+        </div>
+        <p className="text-[13px] leading-relaxed text-argos-muted">{lab.defenseSummary}</p>
+      </div>
+
+      {/* Footer */}
+      <div className="px-5 py-4 border-t border-argos-border" style={{ background: '#0E1012' }}>
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-sm font-semibold text-argos-text font-grotesk group-hover:text-white transition-colors">{lab.title}</h3>
+          {lab.live ? (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
+              LIVE
+            </span>
+          ) : (
+            <span
+              className="text-[9px] font-mono font-semibold tracking-widest uppercase px-1.5 py-0.5 rounded"
+              style={{ color: accent, border: `1px solid ${accent}30`, background: accent + '10' }}
+            >
+              Lab
+            </span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5 mb-3.5">
+          {lab.tags.map(t => (
+            <span key={t} className="px-2 py-0.5 rounded text-[10px] font-mono text-argos-muted bg-argos-bg border border-argos-border">
+              {t}
+            </span>
+          ))}
+        </div>
+        <span
+          className="inline-flex items-center gap-1 text-xs font-semibold transition-colors"
+          style={{ color: accent + 'BB' }}
+        >
+          View Lab
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1">
+            <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </span>
-        <span className="text-[10px] font-mono font-medium tracking-widest text-defense uppercase">Defense</span>
       </div>
-      <p className="text-[13px] leading-relaxed text-argos-muted">{lab.defenseSummary}</p>
-    </div>
-
-    {/* Footer: lab name + tags + CTA */}
-    <div className="px-5 py-4 border-t border-argos-border bg-[#111316]">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-argos-text font-grotesk">{lab.title}</h3>
-        {lab.live && (
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
-            LIVE
-          </span>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {lab.tags.map(t => (
-          <span key={t} className="px-2 py-0.5 rounded text-[10px] font-mono text-argos-muted bg-argos-bg border border-argos-border">
-            {t}
-          </span>
-        ))}
-      </div>
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-argos-muted group-hover:text-argos-text transition-colors">
-        View Lab
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5">
-          <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </span>
-    </div>
-  </a>
-);
+    </a>
+  );
+};
 
 // ─── FAQ Item ─────────────────────────────────────────────────────────────────
 const FAQItem = ({ q, a }) => {
@@ -541,18 +602,19 @@ export const Hub = () => {
       {/* ═══ 4. LABS GRID ═══════════════════════════════════════════════════════ */}
       <section id="labs" className="relative z-10 mx-auto max-w-7xl px-6 py-20 scroll-mt-20">
         {/* Section header */}
-        <div className="mb-8">
-          <h2 className="font-grotesk font-bold text-3xl lg:text-4xl tracking-tight text-argos-text">
+        <div className="mb-10">
+          <span className="text-[10px] font-mono tracking-widest text-argos-muted uppercase">The Simulations</span>
+          <h2 className="mt-2 font-grotesk font-bold text-3xl lg:text-4xl tracking-tight text-argos-text">
             Six Labs. Six Attacks. Six Defenses.
           </h2>
           <p className="mt-3 text-argos-muted max-w-xl">
-            Each lab is an independent, self-contained red-team / blue-team simulation you can run today.
+            Every lab is a self-contained red-team / blue-team pair — run the attack, watch the defense catch it, read the numbers.
           </p>
         </div>
 
         {/* 6 lab cards grid: 3 + 3 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {LABS.map(lab => <LabCard key={lab.slug} lab={lab}/>)}
+          {LABS.map((lab, i) => <LabCard key={lab.slug} lab={lab} index={i}/>)}
         </div>
       </section>
 
