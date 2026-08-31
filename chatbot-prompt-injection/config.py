@@ -3,14 +3,19 @@ Constants for the chatbot-prompt-injection lab.
 """
 
 # --- Gemini (raw HTTPS, no SDK — disk-constrained machine) ---
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-flash-lite-latest"   # newer keys can't call gemini-2.5-flash
 GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GEMINI_TIMEOUT = 45
-MAX_GEMINI_CALLS = 2500         # hard budget guard for one `run.py` (flash is cheap; ~$0.30 full)
+GEMINI_MIN_INTERVAL = 4.5       # seconds between live calls (free tier ~15 rpm)
+MAX_GEMINI_CALLS = 350          # hard budget guard for one --llm run (free tier day cap)
 CACHE_PATH = "data/llm_cache.json"
 
 # --- the battle ---
 MAX_ROUNDS = 8                  # attacker turns per episode
+LLM_MAX_ROUNDS = 4             # shorter episodes when driving real Gemini (rate limits)
+LLM_TECHNIQUES = {"refund": ["direct_override", "fake_system", "refund_code_ruse"],
+                  "leak": ["direct_override", "hypothetical_leak"]}
+LLM_CONFIGS = ["none", "full"]  # run the real-Gemini battle only for the two story-telling configs
 TARGET_REFUND = 500.0
 DEFENSE_CONFIGS = ["none", "guardrail", "policy", "full"]
 

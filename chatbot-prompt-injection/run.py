@@ -15,7 +15,8 @@ import argparse
 import json
 import random
 
-from config import DEFENSE_CONFIGS, DEMO_DATA_PATH, EVASION_STEPS, TARGET_REFUND
+from config import (DEFENSE_CONFIGS, DEMO_DATA_PATH, EVASION_STEPS, LLM_CONFIGS,
+                    LLM_MAX_ROUNDS, LLM_TECHNIQUES, TARGET_REFUND)
 import gemini
 from attacker import Attacker, obfuscate
 from bankbot import BankBot
@@ -32,7 +33,7 @@ def _episode(goal, technique, defense, use_llm, seed):
     bot = BankBot(bank, ATTACK_ACCOUNT, use_llm=use_llm, defense=defense, seed=seed)
     atk = Attacker(goal, ATTACK_ACCOUNT, use_llm=use_llm, seed=seed)
     atk.techniques = [technique]
-    return atk.run_episode(defense, bot)
+    return atk.run_episode(defense, bot, max_rounds=LLM_MAX_ROUNDS if use_llm else None)
 
 
 def _utility(defense, use_llm, n=12):
@@ -83,13 +84,45 @@ def main(use_llm: bool):
     grid = ([("refund", t) for t in REFUND_TECHNIQUES]
             + [("leak", t) for t in LEAK_TECHNIQUES])
 
+    # always run the full offline grid — fills the metrics table + demo for
+    # every config. Free-tier Gemini caps mean the --llm pass only re-runs a
+    # curated subset (the two story-telling configs, a few techniques).
     results = {c: {"refund": [], "leak": []} for c in DEFENSE_CONFIGS}
-    episodes = []
+    by_key = {}
     for cfg, dfn in defenses.items():
         for si, (goal, tech) in enumerate(grid):
-            ep = _episode(goal, tech, dfn, use_llm, seed=100 * si + hash(cfg) % 97)
+            ep = _episode(goal, tech, dfn, False, seed=100 * si + hash(cfg) % 97)
             results[cfg][goal].append(ep)
-            episodes.append(ep)
+            by_key[(cfg, goal, tech)] = ep
+
+    if use_llm:
+        n_llm = 0
+        for cfg in LLM_CONFIGS:
+            for goal, techs in LLM_TECHNIQUES.items():
+                for si, tech in enumerate(techs):
+                    if tech not in [k[2] for k in by_key if k[0] == cfg and k[1] == goal]:
+                        continue
+                    try:
+                        ep = _episode(goal, tech, defenses[cfg], True, seed=7 * si + 13)
+                    except gemini.GeminiUnavailable as e:
+                        print(f"  gemini stopped ({e}); keeping offline episodes for the rest")
+                        use_llm = False
+                        break
+                    n_llm += 1
+                    # replace the offline episode for this exact key
+                    lst = results[cfg][goal]
+                    for i, old in enumerate(lst):
+                        if old["technique"] == tech:
+                            lst[i] = ep
+                    by_key[(cfg, goal, tech)] = ep
+                if not use_llm:
+                    break
+            if not use_llm:
+                break
+        print(f"  ran {n_llm} episodes on real Gemini ({gemini.call_count()} calls); "
+              f"the rest of the grid is the offline engine")
+
+    episodes = list(by_key.values())
 
     print("\n=== Attack Success Rate by defence config ===")
     print(f"{'config':<10} {'refund ASR':>12} {'leak ASR':>10} {'money moved':>13}")
@@ -99,7 +132,7 @@ def main(use_llm: bool):
         r_asr = sum(e["success"] for e in r) / len(r)
         l_asr = sum(e["success"] for e in le) / len(le)
         moved = sum(TARGET_REFUND for e in r if e["success"])
-        u_ok, u_n = _utility(defenses[cfg], use_llm)
+        u_ok, u_n = _utility(defenses[cfg], False)  # utility check stays offline (rate limits)
         summary[cfg] = {"refund_asr": round(r_asr, 3), "leak_asr": round(l_asr, 3),
                         "money_moved": moved, "utility_ok": u_ok, "utility_n": u_n,
                         "evasion": _evasion_curve(defenses[cfg])}

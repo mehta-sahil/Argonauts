@@ -118,14 +118,14 @@ class Attacker:
             self.use_llm = False
             return None
 
-    def run_episode(self, defense, bankbot, transcript_sink=None):
+    def run_episode(self, defense, bankbot, transcript_sink=None, max_rounds=None):
         """Drive one technique to conclusion. Returns an episode dict."""
         technique = self.rng.choice(self.techniques)
         rung, feedback, strength = 0, "", 0.33
         turns = []
         success, success_round, blocked_history = False, None, []
 
-        for rnd in range(MAX_ROUNDS):
+        for rnd in range(max_rounds or MAX_ROUNDS):
             msg = None
             if self.use_llm:
                 msg = self._llm_message(technique, bankbot.history, feedback)

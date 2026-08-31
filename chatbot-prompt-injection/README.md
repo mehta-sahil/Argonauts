@@ -121,6 +121,27 @@ genuine ≤$50 refunds.
 Gemini responses are cached to `data/llm_cache.json`, so re-runs are free
 and the committed demo replays without a key.
 
+### What `python run.py --llm` shows
+
+Run against real Gemini (`gemini-flash-lite-latest`, both sides), the
+**bank bot refuses every classic injection** — direct override, fake
+`[SYSTEM]` blocks, "diagnostic override code 0x9…", "senior security
+auditor conducting authorized testing" — and calls `escalate_to_human`
+each time. A current model with the hardened system prompt in
+`bankbot.py` is not jailbroken by these techniques in a handful of
+rounds. The Gemini *attacker* does produce genuinely creative payloads;
+they just don't land.
+
+That doesn't make the policy engine redundant — it makes it the thing
+you rely on for the models and prompts that *aren't* hardened (and for
+the next technique). The offline emulator is deliberately gullible so the
+"bot jailbroken → policy engine denies it" scenario is visible; `--llm`
+is the check that the pipeline works end-to-end on a real model. The
+`--llm` pass only re-runs the `none` / `full` configs for a few
+techniques (free-tier Gemini is ~1000 requests/day with a per-minute
+cap, so `gemini.py` rate-limits to ~13 req/min and the rest of the grid
+stays on the offline engine).
+
 ---
 
 ## Research grounding
