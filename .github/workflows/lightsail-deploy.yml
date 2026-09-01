@@ -4,6 +4,10 @@ name: Deploy to Lightsail
 # Lightsail's own registry, then rolls out a deployment that also pulls the KYC
 # backend straight from ECR.
 #
+# Ports must be unique across every container in the service, so each app is
+# pinned: frontend 80, pushpay 8000, chatbot 8001, voiceauth 8002,
+# kyc-backend 8003. nginx.conf must agree with this list.
+#
 # Lightsail has no native CI/CD — a deployment only happens when something calls
 # CreateContainerServiceDeployment, so this workflow is the automation.
 
@@ -196,7 +200,8 @@ jobs:
                 voiceauth: {
                   image: $voiceauth,
                   environment: { SARVAM_API_KEY: $sarvam },
-                  ports: { "8000": "HTTP" }
+                  command: ["uvicorn","server:app","--host","0.0.0.0","--port","8002"],
+                  ports: { "8002": "HTTP" }
                 },
                 "kyc-backend": {
                   image: $kyc,
@@ -204,7 +209,8 @@ jobs:
                     KYC_MODELS_DIR: "/app/models",
                     KYC_ALLOWED_ORIGINS: "https://argonauts.qg8fj3h0aqqf4.us-east-1.cs.amazonlightsail.com"
                   },
-                  ports: { "8000": "HTTP" }
+                  command: ["uvicorn","app.main:app","--host","0.0.0.0","--port","8003","--workers","1"],
+                  ports: { "8003": "HTTP" }
                 }
               },
               publicEndpoint: {
