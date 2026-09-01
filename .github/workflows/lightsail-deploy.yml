@@ -73,6 +73,16 @@ jobs:
             echo "::error::CARDING_API_URL secret is not set — the CVV lab would ship broken."
             exit 1
           fi
+          # A secret pasted with a trailing newline lands inside the JS string
+          # literal below, leaving config.js unparseable. window.CARDING_API_URL
+          # is then never defined and the lab's Start attack button silently
+          # does nothing - which is exactly what shipped. A URL cannot contain
+          # whitespace, so stripping all of it is safe.
+          CARDING_API_URL=$(printf '%s' "$CARDING_API_URL" | tr -d '[:space:]')
+          case "$CARDING_API_URL" in
+            https://*) : ;;
+            *) echo "::error::CARDING_API_URL is not an https URL"; exit 1 ;;
+          esac
           cat > "Kyc identity theft/frontend/public/labs/distributed-cvv-guessing/config.js" <<EOF
           // Generated at build time from the CARDING_API_URL secret.
           window.CARDING_API_URL = "${CARDING_API_URL}";
