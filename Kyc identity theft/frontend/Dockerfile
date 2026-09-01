@@ -24,13 +24,9 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy the Vite build output
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# nginx starts on a static-only config so it never depends on a backend being
-# up, then swaps in the proxy config once they resolve. See nginx.bootstrap.conf
-# and upstream-wait.sh for why.
-COPY nginx.bootstrap.conf /etc/nginx/conf.d/default.conf
-COPY nginx.full.conf      /etc/nginx/nginx.full.conf
-COPY upstream-wait.sh     /docker-entrypoint.d/40-upstream-wait.sh
-RUN chmod +x /docker-entrypoint.d/40-upstream-wait.sh
+# Backends are reached on 127.0.0.1 (Lightsail containers share a network
+# namespace), so nginx needs no DNS at config load and starts unconditionally.
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

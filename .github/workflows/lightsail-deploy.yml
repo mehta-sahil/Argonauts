@@ -27,6 +27,14 @@ on:
     types: [completed]
   workflow_dispatch:
 
+# Two pushes in quick succession raced: the second run called
+# CreateContainerServiceDeployment while the first was still activating and
+# died with "deployment N is in progress". Queue runs instead of cancelling,
+# so a later commit still gets deployed rather than silently dropped.
+concurrency:
+  group: lightsail-deploy
+  cancel-in-progress: false
+
 env:
   AWS_REGION: us-east-1
   SERVICE_NAME: argonauts
@@ -237,6 +245,24 @@ jobs:
               }
             }' > deployment.json
           cat deployment.json
+
+      # Concurrency stops two runs overlapping, but a deployment triggered
+      # elsewhere (console, another workflow) can still be mid-flight. Wait it
+      # out rather than failing the run.
+      - name: Wait for any in-progress deployment
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            state=$(aws lightsail get-container-services               --region "$AWS_REGION" --service-name "$SERVICE_NAME"               --query 'containerServices[0].state' --output text)
+            if [ "$state" != "DEPLOYING" ]; then
+              echo "service is $state, proceeding"
+              exit 0
+            fi
+            echo "service is DEPLOYING, waiting ($i/60)"
+            sleep 15
+          done
+          echo "::error::service stuck in DEPLOYING for 15 minutes"
+          exit 1
 
       - name: Create the deployment
         run: |
