@@ -1,0 +1,7 @@
+#!/bin/sh
+# Sourced by nginx's docker-entrypoint before the template is rendered (the
+# .envsh suffix makes the entrypoint source it, so this export survives).
+# Reads whatever nameserver the platform gave this container.
+export DNS_RESOLVER="$(awk '/^nameserver/ { print $2; exit }' /etc/resolv.conf)"
+[ -n "$DNS_RESOLVER" ] || export DNS_RESOLVER="127.0.0.11"
+echo "[resolver] nginx will resolve upstreams via $DNS_RESOLVER"

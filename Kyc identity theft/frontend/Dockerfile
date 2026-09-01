@@ -24,8 +24,13 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy the Vite build output
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# nginx config: serve SPA (fallback to index.html) and static labs
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# nginx config as a template: the DNS resolver address is injected at start.
+# Restricting envsubst to DNS_RESOLVER keeps it away from nginx's own $host,
+# $uri and friends, which would otherwise be blanked out.
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY docker-resolver.envsh /docker-entrypoint.d/10-resolver.envsh
+RUN chmod +x /docker-entrypoint.d/10-resolver.envsh
+ENV NGINX_ENVSUBST_FILTER=DNS_RESOLVER
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
