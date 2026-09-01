@@ -403,7 +403,7 @@
               <circle class="prog"  cx="74" cy="74" r="62" fill="none" stroke-width="12"
                       stroke-dasharray="389.6" stroke-dashoffset="389.6" id="ringProg"></circle>
             </svg>
-            <div class="center"><span class="num" id="ringNum">0</span><span class="of">of 5</span></div>
+            <div class="center"><span class="num" id="ringNum">0</span><span class="of" id="ringDen">of &mdash;</span></div>
           </div>
           <div class="ring-label">CVV mismatches on <b id="ringPan">no card</b></div>
           <div class="ring-verdict idle" id="ringVerdict">Card active</div>
@@ -599,8 +599,11 @@ const LAMBDA_URL =
   new URLSearchParams(location.search).get("api") ||
   (typeof window.CARDING_API_URL === "string" && window.CARDING_API_URL) ||
   DEFAULT_API;
-const BLOCK_THRESHOLD = 5;
-const RISK_CUTOFF = 0.86; // keep in sync with the mitigation Lambda's RISK_CUTOFF env
+// Fallback only. The moment the auth Lambda returns velocity_threshold this
+// tracks it, and the card blocking teaches us the real value regardless - see
+// applyResult(). Nothing below reads a literal 5.
+let BLOCK_THRESHOLD = 5;
+let RISK_CUTOFF = 0.86; // keep in sync with the mitigation Lambda's RISK_CUTOFF env
 const RING_CIRC = 389.6; // 2 * pi * 62
 
 // attacker's view: PAN + expiry only, no CVV (from attacker_card_list.csv)
@@ -692,6 +695,7 @@ function renderRing() {
   const frac = Math.min(ringCount / BLOCK_THRESHOLD, 1);
   $("ringProg").setAttribute("stroke-dashoffset", RING_CIRC * (1 - frac));
   $("ringNum").textContent = ringCount;
+  $("ringDen").textContent = "of " + BLOCK_THRESHOLD;
   $("ring").classList.toggle("blocked", cardBlocked);
   const v = $("ringVerdict");
   if (cardBlocked) { v.textContent = "CARD BLOCKED"; v.className = "ring-verdict blocked"; }
@@ -703,9 +707,17 @@ function renderRisk() {
   $("riskCut").textContent = RISK_CUTOFF.toFixed(2);
   const el = $("riskVal"), fill = $("riskFill");
   if (riskScore == null) {
-    el.textContent = "n/a"; fill.style.width = "0"; fill.classList.remove("hot");
+    // The scorer runs off a DynamoDB stream and lands seconds after the auth
+    // call, so a fast run finishes before it reports. "n/a" made that look
+    // broken; say which it is.
+    el.textContent = ringCount > 0 ? "scoring…" : "n/a";
+    el.title = ringCount > 0
+      ? "The ML scorer runs asynchronously and had not written a score before this run ended."
+      : "";
+    fill.style.width = "0"; fill.classList.remove("hot");
     return;
   }
+  el.title = "";
   el.textContent = riskScore.toFixed(3);
   fill.style.width = Math.min(riskScore * 100, 100) + "%";
   fill.classList.toggle("hot", riskScore >= RISK_CUTOFF);
@@ -773,6 +785,21 @@ async function tick() {
   if (!call.pass && (call.kind === "rejected_cvv_n" || call.kind === "rejected_high_value")) mReject[merchant.name]++;
 
   if (typeof r.cvvFailedAttempts === "number") ringCount = r.cvvFailedAttempts;
+
+  // Prefer values the backend states outright.
+  if (typeof r.velocity_threshold === "number") BLOCK_THRESHOLD = r.velocity_threshold;
+  if (typeof r.risk_cutoff === "number") RISK_CUTOFF = r.risk_cutoff;
+
+  // Otherwise infer it: the attempt count at which the issuer blocked on the
+  // velocity rule IS the threshold, straight from the issuer's own behaviour.
+  if (r.decline_reason === "card_blocked" || r.pan_status === "BLOCKED") {
+    const reason = r.block_reason || "";
+    if (reason === "threshold" && typeof r.cvvFailedAttempts === "number" && r.cvvFailedAttempts > 0) {
+      BLOCK_THRESHOLD = r.cvvFailedAttempts;
+    }
+  }
+  renderRing();
+
   if (typeof r.risk_score === "number") { riskScore = r.risk_score; renderRisk(); }
 
   if (call.pass && r.cvv_result === "N") {
