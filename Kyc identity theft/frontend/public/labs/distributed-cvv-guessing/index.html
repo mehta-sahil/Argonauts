@@ -185,6 +185,7 @@
   .modal .close:hover { border-color: var(--accent); }
   .modal .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 640px) { .modal .cols { grid-template-columns: 1fr; } }
+  .stat .v.stale{color:var(--muted);font-style:italic;}
 </style>
 
 <!-- ARGONAUTS SHARED DESIGN SYSTEM -->
@@ -329,6 +330,10 @@
         <option value="250">Fast</option>
         <option value="700" selected>Normal</option>
         <option value="1600">Slow</option>
+        <!-- One attempt every 10s. This is the pattern the ML layer was
+             actually trained to catch, and the only speed at which the
+             asynchronous scorer reports before Layer 1 blocks the card. -->
+        <option value="10000">Slow and low (lets the ML score)</option>
       </select>
     </div>
     <div class="spacer"></div>
@@ -416,7 +421,7 @@
           <div class="riskbar"><div class="riskbar-fill" id="riskFill"></div></div>
           <div class="note" style="padding:6px 0 0">
             ML model (slow-and-low detector). Blocks at
-            <b id="riskCut">0.86</b> even before 5 mismatches.
+            <b id="riskCut">&mdash;</b> even before <b id="riskDen">&mdash;</b> mismatches.
           </div>
           <div class="stat" id="reasonRow" style="display:none">
             <span class="k">Blocked by</span>
@@ -603,7 +608,10 @@ const LAMBDA_URL =
 // tracks it, and the card blocking teaches us the real value regardless - see
 // applyResult(). Nothing below reads a literal 5.
 let BLOCK_THRESHOLD = 5;
-let RISK_CUTOFF = 0.86; // keep in sync with the mitigation Lambda's RISK_CUTOFF env
+let RISK_CUTOFF = 0.86; // fallback; the mitigation Lambda owns the real value
+// When the first attempt landed, so the panel can stop claiming to be scoring
+// once it is clear no score is coming.
+let scoringSince = null;
 const RING_CIRC = 389.6; // 2 * pi * 62
 
 // attacker's view: PAN + expiry only, no CVV (from attacker_card_list.csv)
@@ -705,19 +713,34 @@ function renderRing() {
 
 function renderRisk() {
   $("riskCut").textContent = RISK_CUTOFF.toFixed(2);
+  $("riskDen").textContent = BLOCK_THRESHOLD;
   const el = $("riskVal"), fill = $("riskFill");
   if (riskScore == null) {
-    // The scorer runs off a DynamoDB stream and lands seconds after the auth
-    // call, so a fast run finishes before it reports. "n/a" made that look
-    // broken; say which it is.
-    el.textContent = ringCount > 0 ? "scoring…" : "n/a";
-    el.title = ringCount > 0
-      ? "The ML scorer runs asynchronously and had not written a score before this run ended."
-      : "";
     fill.style.width = "0"; fill.classList.remove("hot");
+    if (ringCount === 0) { el.textContent = "n/a"; el.title = ""; el.classList.remove("stale"); return; }
+
+    // The scorer writes to DynamoDB off a stream; the UI only ever sees a score
+    // if a later auth response carries one. Once the card blocks, the Lambda
+    // returns early and omits risk_score entirely, so past that point no score
+    // can arrive however long we wait. Saying "scoring" forever would be a lie.
+    const waited = scoringSince ? (Date.now() - scoringSince) / 1000 : 0;
+    const patience = (parseInt(($("speed") || {}).value, 10) || 700) >= 10000 ? 45 : 12;
+    if (cardBlocked || waited > patience) {
+      el.textContent = "not scored";
+      el.classList.add("stale");
+      el.title = "Layer 1 blocked the card first. The ML scorer runs asynchronously "
+               + "(about 2-10s) and the issuer stops returning a risk score once a card "
+               + "is blocked, so Layer 2 never got to weigh in on this run. "
+               + "Try a slower run against a fresh card to see it score.";
+    } else {
+      el.textContent = "scoring…";
+      el.classList.remove("stale");
+      el.title = "The ML scorer runs asynchronously off a DynamoDB stream, "
+               + "typically 2-10 seconds behind the attempt.";
+    }
     return;
   }
-  el.title = "";
+  el.title = ""; el.classList.remove("stale");
   el.textContent = riskScore.toFixed(3);
   fill.style.width = Math.min(riskScore * 100, 100) + "%";
   fill.classList.toggle("hot", riskScore >= RISK_CUTOFF);
@@ -784,6 +807,7 @@ async function tick() {
   if (r.cvv_result === "M") s.m++;
   if (!call.pass && (call.kind === "rejected_cvv_n" || call.kind === "rejected_high_value")) mReject[merchant.name]++;
 
+  if (scoringSince === null) scoringSince = Date.now();
   if (typeof r.cvvFailedAttempts === "number") ringCount = r.cvvFailedAttempts;
 
   // Prefer values the backend states outright.
@@ -800,7 +824,8 @@ async function tick() {
   }
   renderRing();
 
-  if (typeof r.risk_score === "number") { riskScore = r.risk_score; renderRisk(); }
+  if (typeof r.risk_score === "number") riskScore = r.risk_score;
+  renderRisk();
 
   if (call.pass && r.cvv_result === "N") {
     s.lax++;
@@ -845,6 +870,7 @@ function start() {
   ringCount = 0;
   cardBlocked = false;
   riskScore = null;
+  scoringSince = null;
   $("reasonRow").style.display = "none";
   $("ringPan").textContent = shortPan(target.pan);
   $("feed").innerHTML = "";
