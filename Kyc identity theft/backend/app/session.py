@@ -1,3 +1,4 @@
+import asyncio
 import time
 import uuid
 from typing import Dict, List, Optional, Any
@@ -69,6 +70,11 @@ class SessionState:
             "face_match": {"status": "PENDING", "display": "Pending...", "value": None},
         }
         
+        # Set by the env_data handler. Phase 2 waits on this instead of blind-
+        # sleeping, so the gate cannot advance before the client's environment
+        # report has actually been scored.
+        self.env_received: asyncio.Event = asyncio.Event()
+
         self.is_blocked: bool = False
         self.block_reason: Optional[str] = None
         self.fraud_flags: List[str] = []

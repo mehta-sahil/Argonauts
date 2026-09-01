@@ -85,10 +85,12 @@ class FaceMatcher:
                 conf = min(0.99, float(0.85 + (fw * fh) / (w * h * 2)))
                 return True, [x, y, fw, fh], conf
                 
-        # Center fallback crop if no cascade detection
-        ymin, xmin = int(h * 0.2), int(w * 0.25)
-        fh, fw = int(h * 0.6), int(w * 0.5)
-        return True, [xmin, ymin, fw, fh], 0.70
+        # No detection means no face. This used to return a centre crop with a
+        # hardcoded 0.70 confidence and detected=True, so every image on earth
+        # was a valid face: solid colours, noise, a cartoon avatar, a 1x1 pixel.
+        # That let non-faces reach generate_embedding() and dragged 1:1 match
+        # scores down with garbage vectors. Callers already handle False.
+        return False, None, 0.0
 
     def extract_face_crop(
         self,

@@ -14,6 +14,7 @@ on:
       - 'Kyc identity theft/frontend/**'
       - 'chatbot-prompt-injection/**'
       - 'push-payment-scams/**'
+      - 'voice-auth-bypass/**'
       - '.github/workflows/lightsail-deploy.yml'
   # Runs after the backend image lands in ECR, so a backend change reaches the
   # site without a second manual step.
@@ -109,6 +110,17 @@ jobs:
           cache-from: type=gha,scope=pushpay
           cache-to: type=gha,mode=max,scope=pushpay
 
+      - name: Build voiceauth
+        uses: docker/build-push-action@v6
+        with:
+          context: ./voice-auth-bypass
+          file: ./voice-auth-bypass/Dockerfile.live
+          platforms: linux/amd64
+          load: true
+          tags: argonauts-voiceauth:ci
+          cache-from: type=gha,scope=voiceauth
+          cache-to: type=gha,mode=max,scope=voiceauth
+
       # Each push prints the versioned name Lightsail assigned, e.g.
       # ":argonauts.frontend.11". That name — not the local tag — is what the
       # deployment has to reference, so capture it here.
@@ -135,6 +147,7 @@ jobs:
           push frontend argonauts-frontend:ci
           push chatbot  argonauts-chatbot:ci
           push pushpay  argonauts-pushpay:ci
+          push voiceauth argonauts-voiceauth:ci
 
       # Pin the backend by digest rather than :latest. Lightsail caches a moving
       # tag, so a tag-only reference can redeploy the previous image.
@@ -155,6 +168,10 @@ jobs:
           FRONTEND: ${{ steps.push.outputs.frontend }}
           CHATBOT: ${{ steps.push.outputs.chatbot }}
           PUSHPAY: ${{ steps.push.outputs.pushpay }}
+          VOICEAUTH: ${{ steps.push.outputs.voiceauth }}
+          # The Sarvam key is a repo secret: it reaches the container as an
+          # env var and is never baked into the image or committed.
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
           KYC_IMAGE: ${{ steps.kyc.outputs.image }}
         run: |
           set -euo pipefail
@@ -163,6 +180,8 @@ jobs:
             --arg frontend "$FRONTEND" \
             --arg chatbot "$CHATBOT" \
             --arg pushpay "$PUSHPAY" \
+            --arg voiceauth "$VOICEAUTH" \
+            --arg sarvam "$SARVAM_API_KEY" \
             --arg kyc "$KYC_IMAGE" \
             '{
               serviceName: $service,
@@ -174,6 +193,11 @@ jobs:
                   ports: { "8001": "HTTP" }
                 },
                 pushpay: { image: $pushpay, ports: { "8000": "HTTP" } },
+                voiceauth: {
+                  image: $voiceauth,
+                  environment: { SARVAM_API_KEY: $sarvam },
+                  ports: { "8000": "HTTP" }
+                },
                 "kyc-backend": {
                   image: $kyc,
                   environment: {

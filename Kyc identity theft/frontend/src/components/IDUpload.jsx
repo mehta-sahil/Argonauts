@@ -1,16 +1,47 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, FileCheck, AlertCircle, ArrowRight, ShieldAlert, Sparkles } from 'lucide-react';
 
-export const IDUpload = ({ onIDUploaded, isSessionActive }) => {
+export const IDUpload = ({ onIDUploaded, isSessionActive, sampleId = '/sample/victim_id.jpg' }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [faceCrop, setFaceCrop] = useState(null);
   const [sessionId, setSessionId] = useState(null);
+  const [isSample, setIsSample] = useState(false);
   const fileInputRef = useRef(null);
 
-  const handleFileSelect = async (file) => {
+  // Demo path: skip the upload step entirely. The bundled portrait is a frame
+  // lifted from deepfakevid.mp4, so it is the same identity the attack clip
+  // impersonates — face match passes and liveness is what fails, which is the
+  // whole point of the lab. Using an unrelated stock photo here would make the
+  // demo fail for the wrong reason.
+  const loadSampleId = async () => {
+    setError(null);
+    try {
+      const res = await fetch(sampleId);
+      if (!res.ok) throw new Error(`sample ID not found (${res.status})`);
+      const blob = await res.blob();
+      await handleFileSelect(new File([blob], 'victim_id.jpg', { type: 'image/jpeg' }), true);
+    } catch (e) {
+      setError('Could not load the sample ID: ' + e.message);
+    }
+  };
+
+  // The ID defaults to a frame lifted from deepfakevid.mp4 — the AI-generated
+  // face the clip belongs to. Loading it on mount means the demo is ready the
+  // moment the page opens: no upload, no movements, and no chance of some
+  // unrelated image standing in as the identity. Upload still overrides it.
+  const autoLoadedRef = useRef(false);
+  useEffect(() => {
+    if (autoLoadedRef.current) return;
+    autoLoadedRef.current = true;
+    loadSampleId();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleFileSelect = async (file, fromSample = false) => {
+    setIsSample(fromSample);
     if (!file || !file.type.startsWith('image/')) {
       setError('Please upload a valid JPEG, PNG, or WebP image of an ID card.');
       return;
@@ -205,6 +236,16 @@ export const IDUpload = ({ onIDUploaded, isSessionActive }) => {
           <p className="text-xs text-slate-400 font-mono">
             Supports Driver's License, Passport, Aadhaar (JPG, PNG, WebP)
           </p>
+
+          {!isUploading && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); loadSampleId(); }}
+              className="mt-4 text-xs font-semibold text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40 transition-colors"
+            >
+              No ID handy? Use the sample identity
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-navy-dark/90 border border-emerald-500/30">
@@ -223,11 +264,18 @@ export const IDUpload = ({ onIDUploaded, isSessionActive }) => {
 
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-bold text-emerald-400">Baseline Face Extracted</span>
+                <span className="text-sm font-bold text-emerald-400">
+                  {isSample ? 'Sample identity loaded' : 'Baseline Face Extracted'}
+                </span>
                 <span className="bg-emerald-950 text-emerald-400 text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-800">
                   512-d EMBEDDING
                 </span>
               </div>
+              {isSample && (
+                <p className="text-xs text-slate-400 mt-1">
+                  The same person the deepfake clip impersonates.
+                </p>
+              )}
               <p className="text-xs text-slate-400 font-mono mt-1">
                 Session ID: <span className="text-slate-300">{sessionId?.substring(0, 13)}...</span>
               </p>
@@ -237,12 +285,27 @@ export const IDUpload = ({ onIDUploaded, isSessionActive }) => {
                   setFaceCrop(null);
                   setPreviewUrl(null);
                   setSessionId(null);
+                  setIsSample(false);
                 }}
                 disabled={isSessionActive}
                 className="text-xs text-mc-amber hover:underline font-mono mt-1 cursor-pointer disabled:opacity-50"
               >
                 Change document
               </button>
+
+              {/* The sample link lives in the dropzone, which is gone once a
+                  document is loaded. Without this you cannot switch to the
+                  sample identity without clearing the current one first. */}
+              {!isSample && (
+                <button
+                  type="button"
+                  onClick={loadSampleId}
+                  disabled={isSessionActive}
+                  className="block text-xs text-cyan-300 hover:underline font-mono mt-1 cursor-pointer disabled:opacity-50"
+                >
+                  Use sample identity instead
+                </button>
+              )}
             </div>
           </div>
         </div>

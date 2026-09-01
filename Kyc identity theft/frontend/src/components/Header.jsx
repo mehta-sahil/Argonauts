@@ -1,63 +1,96 @@
 import React from 'react';
-import { ShieldCheck, ShieldAlert, Cpu, Lock, Radio } from 'lucide-react';
 
-export const Header = ({ isConnected, phase }) => {
-  return (
-    <header className="border-b border-navy-border bg-navy-dark/95 backdrop-blur-md px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40 shadow-xl">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+// The five static labs all render the same `#argos-nav` bar. This is that bar,
+// rebuilt in React so the flagship KYC app sits under the same chrome instead
+// of its own Mastercard-branded one. Values are copied from the lab pages'
+// stylesheet verbatim (56px tall, #2A2D33 hairline, 0.85 alpha ground) rather
+// than approximated through Tailwind tokens, so the two match exactly.
+const ACCENT = '#E5484D';   // this lab's accent, per LABS[0] in Hub.jsx
+const LINE = '#2A2D33';
+const MUTED = '#9A9EA6';
 
-        {/* Left: Mastercard Branding */}
-        <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
-          <div className="relative flex items-center shrink-0">
-            {/* Mastercard Interlocking Circles */}
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-mc-red shadow-lg shadow-mc-red/40" />
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-mc-amber -ml-4 mix-blend-screen opacity-90 shadow-lg shadow-mc-amber/40" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
-              <h1 className="text-base sm:text-xl font-bold tracking-tight text-white flex items-center">
-                Mastercard <span className="text-mc-amber ml-1.5 font-semibold">AI Defense Lab</span>
-              </h1>
-              <span className="bg-mc-red/20 text-mc-red text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full border border-mc-red/30">
-                v1.0-LIVE
-              </span>
-            </div>
-            <p className="hidden sm:block text-xs text-slate-400 font-mono truncate">
-              Deepfake-Resilient KYC Biometric Authentication Pipeline
-            </p>
-          </div>
-        </div>
+export const Header = ({ isConnected }) => (
+  <nav
+    className="sticky top-0 z-40 flex items-center justify-between gap-4 px-6"
+    style={{
+      height: 56,
+      background: 'rgba(10,11,13,0.85)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      borderBottom: `1px solid ${LINE}`,
+      fontFamily: 'Inter, system-ui, sans-serif'
+    }}
+  >
+    <div className="flex items-center gap-3 min-w-0">
+      <a href="/" className="flex items-center gap-2.5 no-underline shrink-0">
+        <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+          <path d="M16 2 L28 8 L28 22 Q28 29 16 30 Q4 29 4 22 L4 8 Z" fill="#0A0B0D" stroke="#E5484D" strokeWidth="1.5" />
+          <path d="M16 8 L22 11 L22 20 Q22 24 16 26 Q10 24 10 20 L10 11 Z" fill="#071419" stroke="#22D3EE" strokeWidth="1" />
+          <circle cx="16" cy="16" r="2.5" fill="#22D3EE" />
+        </svg>
+        <span
+          style={{
+            fontFamily: "'Space Grotesk', system-ui, sans-serif",
+            fontWeight: 600, fontSize: 13, letterSpacing: '0.15em',
+            textTransform: 'uppercase', color: '#F5F6F7'
+          }}
+        >
+          Argonauts
+        </span>
+      </a>
 
-        {/* Right: Security & Network Telemetry */}
-        <div className="flex items-center space-x-3 sm:space-x-4 shrink-0">
-          <div className="hidden md:flex items-center space-x-3 bg-navy-card/80 px-3.5 py-1.5 rounded-lg border border-navy-border text-xs font-mono">
-            <div className="flex items-center space-x-1.5">
-              <Lock className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-slate-300">TLS-256 E2E</span>
-            </div>
-            <span className="text-slate-600">|</span>
-            <div className="flex items-center space-x-1.5">
-              <Cpu className="w-3.5 h-3.5 text-mc-amber" />
-              <span className="text-slate-300">WASM Landmarker</span>
-            </div>
-          </div>
+      <span style={{ width: 1, height: 18, background: LINE }} className="shrink-0" />
 
-          <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border text-xs font-mono font-medium transition-all ${
-            isConnected 
-              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-              : 'bg-slate-800/40 border-slate-700 text-slate-400'
-          }`}>
-            <span className="relative flex h-2 w-2">
-              {isConnected && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              )}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${isConnected ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
-            </span>
-            <span>{isConnected ? 'NODE ONLINE' : 'NODE READY'}</span>
-          </div>
-        </div>
+      <span
+        style={{
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
+          fontWeight: 600, color: ACCENT, opacity: 0.7
+        }}
+      >
+        01
+      </span>
+      <span
+        className="truncate"
+        style={{
+          fontFamily: "'Space Grotesk', system-ui, sans-serif",
+          fontSize: 13, fontWeight: 600, color: ACCENT
+        }}
+      >
+        KYC Identity Theft
+      </span>
+    </div>
 
-      </div>
-    </header>
-  );
-};
+    <div className="flex items-center gap-3 shrink-0">
+      {/* Kept from the old header because it is live state, not decoration:
+          it tells you whether the verification socket is actually connected. */}
+      <span
+        className="hidden sm:inline-flex items-center gap-2"
+        style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: MUTED }}
+      >
+        <span
+          style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: isConnected ? '#22D3EE' : '#4A4F57'
+          }}
+        />
+        {isConnected ? 'connected' : 'offline'}
+      </span>
+
+      <a
+        href="/"
+        className="inline-flex items-center gap-1.5 no-underline transition-colors"
+        style={{
+          fontSize: 12, fontWeight: 500, color: MUTED,
+          padding: '6px 12px', borderRadius: 6, border: `1px solid ${LINE}`
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = '#F5F6F7'; e.currentTarget.style.borderColor = MUTED; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = MUTED; e.currentTarget.style.borderColor = LINE; }}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10 4l-5 4 5 4" />
+        </svg>
+        All Labs
+      </a>
+    </div>
+  </nav>
+);

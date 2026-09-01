@@ -100,9 +100,19 @@ class EnvironmentValidator:
         Computes inter-frame timing variance across requestVideoFrameCallback timestamps.
         Near-zero variance indicates synthetic / software-timed frame injection.
         """
-        if not deltas or len(deltas) < 15:
-            # Not enough samples yet
-            return True, "MEASURING...", 0.0, {"sample_count": len(deltas) if deltas else 0}
+        # Fail closed. env_data is sent once with a complete payload, so there is
+        # no "still measuring" state here — too few samples means the pacing was
+        # never verified, and an attacker can produce that state at will by
+        # dropping requestVideoFrameCallback. An unverified check is not a pass.
+        n = len(deltas) if deltas else 0
+        if n < 15:
+            reason = ("requestVideoFrameCallback unavailable — no frame pacing reported"
+                      if n == 0 else f"only {n} samples, need 15")
+            return False, "UNVERIFIED (NO PACING DATA)", 0.0, {
+                "sample_count": n,
+                "unverified": True,
+                "reason": reason
+            }
             
         deltas_np = np.array(deltas, dtype=np.float64)
         variance = float(np.var(deltas_np))

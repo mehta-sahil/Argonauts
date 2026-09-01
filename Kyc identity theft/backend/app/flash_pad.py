@@ -41,10 +41,12 @@ class FlashPADAnalyzer:
         """
         h, w = image_bgr.shape[:2]
         if bbox is None or len(bbox) < 4:
-            # Fallback to center 40% of image if no bbox
-            ymin, ymax = int(h * 0.3), int(h * 0.7)
-            xmin, xmax = int(w * 0.3), int(w * 0.7)
-            return image_bgr[ymin:ymax, xmin:xmax]
+            # No face, no skin. The old centre-crop fallback measured whatever
+            # happened to be mid-frame - a wall, a shirt - and reported it as a
+            # skin reflection, so the check could never fail for want of a face.
+            # An empty ROI is dropped by the caller, and compute_chromaticity_
+            # correlation() already fails closed below three usable samples.
+            return np.empty((0, 0, 3), dtype=image_bgr.dtype)
             
         fx, fy, fw, fh = bbox
         fx = max(0, min(fx, w - 1))

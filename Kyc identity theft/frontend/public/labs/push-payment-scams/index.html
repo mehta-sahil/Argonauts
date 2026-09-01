@@ -177,6 +177,89 @@
     border-color: #9A9EA6;
   }
 
+
+  /* ---- three-screen shell -------------------------------------------- */
+  /* Each view owns the whole stage. Only one is in the DOM flow at a time,
+     so nothing from another screen competes for attention. */
+  .lab-head{padding:26px 24px 0;max-width:900px;margin:0 auto;width:100%;}
+  .lab-head h1{font-family:'Space Grotesk',system-ui,sans-serif;font-size:26px;
+        font-weight:600;margin:0 0 18px;letter-spacing:-.01em;}
+  .viewnav{display:flex;gap:8px;border-bottom:1px solid var(--line);}
+  .vbtn{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;
+        padding:10px 4px;margin-right:18px;font-size:14px;font-weight:600;
+        color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s;}
+  .vbtn:hover{color:var(--text);border-color:transparent;}
+  .vbtn.is-on{color:var(--text);border-bottom-color:var(--accent);}
+
+  .lab-stage{flex:1;min-height:0;display:flex;overflow-y:auto;scroll-behavior:smooth;}
+  /* The default Windows scrollbar is a wide light slab against a near-black
+     page. Thin, dark, and only as loud as it needs to be. */
+  .lab-stage{scrollbar-width:thin;scrollbar-color:#33373E transparent;}
+  .lab-stage::-webkit-scrollbar{width:10px;}
+  .lab-stage::-webkit-scrollbar-track{background:transparent;}
+  .lab-stage::-webkit-scrollbar-thumb{background:#33373E;border-radius:999px;
+        border:3px solid var(--bg);background-clip:content-box;}
+  .lab-stage::-webkit-scrollbar-thumb:hover{background:#4A4F57;background-clip:content-box;}
+  .view{display:none;flex:1;min-height:0;flex-direction:column;gap:14px;
+        padding:22px 24px 32px;max-width:900px;margin:0 auto;width:100%;}
+  .view.is-on{display:flex;}
+  .view-sub{margin:0;font-size:13px;color:var(--muted);line-height:1.5;}
+
+  /* Evidence is its own screen now, so the old fixed right rail becomes a
+     normal two-column block. */
+  /* Evidence is its own screen: a single column that reads top to bottom.
+     The old auto-fit grid forced the chart into a column narrower than its
+     own axis labels, which is what produced the horizontal scrollbar. */
+  #view-evidence .side{width:auto;border-left:none;background:none;padding:0;
+        display:flex;flex-direction:column;gap:26px;min-width:0;}
+
+  .ev-claim{font-size:15px;line-height:1.6;color:var(--text);
+        border-left:2px solid var(--accent);padding:2px 0 2px 14px;}
+  .ev-claim b{color:var(--text);font-weight:700;}
+
+  /* Head-to-head. The comparison is the finding, so it gets the most weight. */
+  .hh{width:100%;border-collapse:collapse;font-size:13px;}
+  .hh th{text-align:right;padding:0 0 10px;font-size:11px;font-weight:600;
+        color:var(--muted);text-transform:uppercase;letter-spacing:.5px;
+        border-bottom:1px solid var(--line);}
+  .hh th:first-child{text-align:left;}
+  .hh td{padding:14px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+  .hh-l b{display:block;font-weight:600;font-size:13px;}
+  .hh-l span{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
+  .hh-n{text-align:right;width:150px;}
+  .hh-n b{display:block;font-family:ui-monospace,monospace;font-size:19px;
+        font-weight:600;color:var(--muted);}
+  .hh-n span{display:block;font-size:11px;color:var(--muted);margin-top:2px;
+        font-family:ui-monospace,monospace;}
+  .hh-n.hh-win b{color:var(--green);}
+
+  .ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;}
+  .ev-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;}
+  .ev-card h3{margin:0;font-size:11px;font-weight:600;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.5px;}
+  .ev-big{font-family:ui-monospace,monospace;font-size:26px;font-weight:600;
+        color:var(--text);margin:8px 0 6px;}
+  .ev-card p{margin:0;font-size:12px;line-height:1.55;color:var(--muted);}
+  .ev-card b{color:var(--text);}
+
+  .ev-chart h3{margin:0 0 12px;font-size:11px;font-weight:600;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.5px;}
+  .ev-chart-body{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;}
+  .ev-chart-body .cap{flex:1;min-width:240px;font-size:12px;line-height:1.6;color:var(--muted);}
+  #chart{flex:none;}
+
+  /* The transcript was flex:1 + overflow-y:auto, sized for the old fixed-height
+     column. On a scrolling screen the guard panel below it stole the space and
+     squashed it to a sliver. Let it be as tall as its messages instead. */
+  #view-watch .chat{flex:none;overflow:visible;min-height:120px;}
+  #view-watch .gauge-wrap{margin-bottom:2px;}
+
+  .examples{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .ex-lbl{font-size:12px;color:var(--muted);}
+  .examples .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;
+        padding:5px 12px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;}
+  .examples .chip:hover{color:var(--text);border-color:var(--accent);}
+
   /* nudge existing wrap to not double-pad */
   .wrap { padding-top: 16px !important; }
   body { font-family: 'Inter', system-ui, sans-serif !important; }
@@ -205,29 +288,44 @@
     All Labs
   </a>
 </nav>
-<header>
-  <div class="brand">
-    <a class="back" href="/#simulations">← All simulations</a>
-    <h1>Push-Payment Scams</h1>
-  </div>
-  <span class="tag"><span class="dot"></span> scam-intent model + payment guard</span>
-</header>
+<!-- One question, then one of three screens. The old page showed the live
+     tool, the scripted player and the metrics dashboard all at once, so there
+     was no obvious thing to do first. -->
+<div class="lab-head">
+  <h1>Can a scam message get past the filter?</h1>
+  <nav class="viewnav">
+    <button class="vbtn is-on" data-view="try">Try it</button>
+    <button class="vbtn" data-view="watch">Watch a scam</button>
+    <button class="vbtn" data-view="evidence">Evidence</button>
+  </nav>
+</div>
 
-<div class="main">
-  <div class="center" id="center">
+<main class="lab-stage">
+
+  <section class="view is-on" id="view-try">
+    <p class="view-sub">Type a message a scammer might send. The live model scores it.</p>
     <div class="live">
-      <div class="live-h">Try it live — type a message the sender might send, and the real model scores it.</div>
-      <textarea id="liveIn" placeholder="e.g. This is your bank's fraud team. Your account is compromised — move your balance to this safe account now, and don't tell anyone."></textarea>
+      <textarea id="liveIn" placeholder="This is your bank&#39;s fraud team. Your account is compromised - move your balance to this safe account now, and don&#39;t tell anyone."></textarea>
       <div class="live-row">
         <button class="primary" id="liveBtn">Analyze</button>
-        <div class="live-out" id="liveOut"><span style="color:var(--muted)">Live scam-intent model · trained on startup</span></div>
+        <div class="live-out" id="liveOut"><span style="color:var(--muted)">Live scam-intent model</span></div>
+      </div>
+      <div class="examples">
+        <span class="ex-lbl">or try:</span>
+        <button class="chip" data-ex="This is your bank&#39;s fraud team. Your account is compromised - move your balance to this safe account now, and don&#39;t tell anyone.">bank impersonation</button>
+        <button class="chip" data-ex="Hey mum, my phone broke, this is my new number. Can you send me 800 today? I&#39;ll pay you back.">family emergency</button>
+        <button class="chip" data-ex="Are we still on for lunch tomorrow at 1?">harmless</button>
       </div>
     </div>
+  </section>
+
+  <section class="view" id="view-watch">
+    <p class="view-sub">A scripted conversation, played turn by turn. Watch the score climb, then the payment guard decide.</p>
     <div class="controls">
       <select id="pick"></select>
       <button class="primary" id="play">Play</button>
-      <button id="step">Step</button>
-      <button id="reset">Reset</button>
+      <button id="step">Next message</button>
+      <button id="reset">Restart</button>
     </div>
     <div class="gauge-wrap">
       <div class="gauge-label"><span>conversation scam score</span><span id="gval">0.00</span></div>
@@ -235,11 +333,40 @@
     </div>
     <div class="chat" id="chat"><div class="empty" id="noData">Run <code>python run.py</code> then reload.</div></div>
     <div id="guardSlot"></div>
-  </div>
-  <div class="side" id="side"></div>
-</div>
+  </section>
+
+  <section class="view" id="view-evidence">
+    <p class="view-sub">How well the two layers actually perform, measured over the whole corpus.</p>
+    <div class="side" id="side"></div>
+  </section>
+
+</main>
 
 <script>
+
+// --- three-screen switcher -------------------------------------------
+// Buttons swap the whole stage rather than scrolling to a section, so each
+// screen starts clean at the top.
+document.querySelectorAll(".vbtn").forEach(function(b){
+  b.onclick = function(){
+    var want = b.dataset.view;
+    document.querySelectorAll(".vbtn").forEach(function(x){ x.classList.toggle("is-on", x === b); });
+    document.querySelectorAll(".view").forEach(function(v){
+      v.classList.toggle("is-on", v.id === "view-" + want);
+    });
+    document.querySelector(".lab-stage").scrollTop = 0;
+  };
+});
+
+// Example chips fill the box and score immediately.
+document.querySelectorAll(".chip").forEach(function(c){
+  c.onclick = function(){
+    var ta = document.getElementById("liveIn");
+    ta.value = c.dataset.ex;
+    document.getElementById("liveBtn").click();
+  };
+});
+
 // --- live model call (Docker container via /pp-api proxy) ---
 const liveOut = document.getElementById("liveOut");
 const liveBtn = document.getElementById("liveBtn");
@@ -287,11 +414,20 @@ function build(){
   document.getElementById("gthr").style.left=(DEMO.flag_threshold*100)+"%";
 
   function reset(){
-    clearInterval(timer);timer=null;shown=0;chat.innerHTML="";
+    clearInterval(timer);timer=null;shown=0;
+    chat.innerHTML='<div class="empty">Press Play to watch the conversation unfold.</div>';
     document.getElementById("guardSlot").innerHTML="";
     gfill.style.width="0";gfill.style.background="var(--green)";gval.textContent="0.00";
   }
+  const stage=document.querySelector(".lab-stage");
+  function stickToBottom(){
+    if(!stage) return;
+    const gap=stage.scrollHeight-stage.scrollTop-stage.clientHeight;
+    if(gap<260) requestAnimationFrame(()=>{stage.scrollTop=stage.scrollHeight;});
+  }
+
   function stepOne(){
+    const hint=chat.querySelector(".empty"); if(hint) hint.remove();
     const c=DEMO.conversations[cur];
     if(shown>=c.turns.length){clearInterval(timer);timer=null;showGuard(c);return;}
     const t=c.turns[shown++];
@@ -306,7 +442,12 @@ function build(){
       d.style.borderColor=`rgba(248,113,113,${0.25+0.6*r})`;
       d.style.background=`rgba(248,113,113,${0.05+0.16*r})`;
     }
-    chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+    chat.appendChild(d);
+    // .chat no longer scrolls (the stage does), so the old chat.scrollTop line
+    // did nothing. Follow the newest message, but only while the reader is
+    // already near the bottom — otherwise scrolling back to re-read a turn
+    // would be yanked away on the next tick.
+    stickToBottom();
     const run=t.running??0;
     gfill.style.width=(run*100)+"%";
     gfill.style.background=run>=DEMO.flag_threshold?"var(--red)":run>=DEMO.flag_threshold*0.6?"var(--amber)":"var(--green)";
@@ -325,21 +466,27 @@ function build(){
         <span style="margin-left:10px;font-family:ui-monospace,monospace;color:var(--muted)">fused risk ${c.payment_risk}</span>
         <div class="pf">${rows}</div>
       </div>`;
+    stickToBottom();
   }
-  document.getElementById("play").onclick=()=>{
-    if(timer){clearInterval(timer);timer=null;return;}
+  const playBtn=document.getElementById("play");
+  const setPlayLabel=()=>{playBtn.textContent=timer?"Pause":"Play";};
+  playBtn.onclick=()=>{
+    if(timer){clearInterval(timer);timer=null;setPlayLabel();return;}
     if(shown>=DEMO.conversations[cur].turns.length) reset();
-    timer=setInterval(stepOne,900);
+    timer=setInterval(()=>{
+      const c=DEMO.conversations[cur];
+      // One final tick after the last turn: that is what reveals the guard
+      // verdict. Stopping on the last message would skip it entirely.
+      if(shown>=c.turns.length){showGuard(c);clearInterval(timer);timer=null;setPlayLabel();return;}
+      stepOne();
+    },2200);
+    setPlayLabel();
   };
-  function renderAll(){
-    reset();
-    const c=DEMO.conversations[cur];
-    while(shown<c.turns.length) stepOne();
-  }
-  document.getElementById("step").onclick=stepOne;
-  document.getElementById("reset").onclick=reset;
-  pick.onchange=()=>{cur=+pick.value;renderAll();};
-  renderAll();
+  document.getElementById("step").onclick=()=>{stepOne();setPlayLabel();};
+  document.getElementById("reset").onclick=()=>{reset();setPlayLabel();};
+  pick.onchange=()=>{cur=+pick.value;reset();setPlayLabel();};
+  reset();
+  setPlayLabel();
 }
 
 function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
@@ -347,33 +494,86 @@ function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">"
 function sidebar(){
   const m=DEMO.metrics, f=m.fusion, side=document.getElementById("side");
   const bk=m.by_kind||{}, fbk=m.fusion_by_kind||{};
-  const pct=(o)=>o&&o.total?Math.round(100*o.hit/o.total)+"%":"–";
+  const n=(x)=>x.toLocaleString();
+  const pc=(hit,tot)=>tot?Math.round(100*hit/tot)+"%":"-";
+
+  // The result this lab exists to show is text-only vs fusion, head to head.
+  // Every number below is read straight from metrics; nothing is recomputed
+  // except the percentages of the counts sitting beside them.
+  const rows=[
+    {label:"Scam payments stopped", sub:"out of "+n(m.n_scam_pay)+" scam payments",
+     a:m.text_only_stop, at:m.n_scam_pay, b:f.scam_stopped, bt:m.n_scam_pay, better:"up"},
+    {label:"Genuine payments blocked", sub:"out of "+n(m.n_legit_pay)+" legitimate payments",
+     a:m.text_only_fp, at:m.n_legit_pay, b:f.legit_hard_block, bt:m.n_legit_pay, better:"down"},
+    {label:"Camouflaged scams caught", sub:"the hard class - no urgency or secrecy language",
+     a:(bk.camouflaged||{}).hit, at:(bk.camouflaged||{}).total,
+     b:(fbk.camouflaged||{}).hit, bt:(fbk.camouflaged||{}).total, better:"up"}
+  ];
+
+  const table=rows.map(r=>{
+    const aPct=pc(r.a,r.at), bPct=pc(r.b,r.bt);
+    const win=r.better==="up" ? r.b>r.a : r.b<r.a;
+    return `<tr>
+      <td class="hh-l"><b>${r.label}</b><span>${r.sub}</span></td>
+      <td class="hh-n"><b>${aPct}</b><span>${n(r.a)}/${n(r.at)}</span></td>
+      <td class="hh-n ${win?"hh-win":""}"><b>${bPct}</b><span>${n(r.b)}/${n(r.bt)}</span></td>
+    </tr>`;
+  }).join("");
+
   side.innerHTML=`
-    <div>
-      <h2>Layer 1 — text model</h2>
-      <div class="metric"><span>conversation AUC-PR</span><span class="v">${m.conv_ap}</span></div>
-      <div class="metric"><span>recall · pressure</span><span class="v good">${pct(bk.pressure)}</span></div>
-      <div class="metric"><span>recall · camouflaged</span><span class="v" style="color:var(--amber)">${pct(bk.camouflaged)}</span></div>
-      <div class="metric"><span>flagged before payment</span><span class="v">${m.flagged_before_ask}/${m.convos_with_ask}</span></div>
+    <div class="ev-claim">
+      Text alone is not enough. Adding non-text payment features stops
+      <b>${n(f.scam_stopped-m.text_only_stop)} more scams</b> and wrongly blocks
+      <b>${n(m.text_only_fp-f.legit_hard_block)} fewer genuine payments</b> -
+      better on both axes at once, not a trade.
     </div>
-    <div>
-      <h2>Layer 2 — payment guard</h2>
-      <div class="metric"><span>scam payments stopped</span><span class="v good">${Math.round(f.stop_rate*100)}%</span></div>
-      <div class="metric"><span>genuine friction</span><span class="v">${Math.round(f.friction_rate*100)}%</span></div>
-      <div class="metric"><span>hard false-block</span><span class="v">${Math.round(f.hard_fp_rate*100)}%</span></div>
-      <div class="metric"><span>scam $ prevented</span><span class="v good">$${Math.round(m.prevented_usd).toLocaleString()}</span></div>
+
+    <table class="hh">
+      <thead><tr><th></th><th>Text model only</th><th>+ Payment guard</th></tr></thead>
+      <tbody>${table}</tbody>
+    </table>
+
+    <div class="ev-grid">
+      <div class="ev-card">
+        <h3>Caught this early</h3>
+        <div class="ev-big">${m.mean_lead_turns} turns</div>
+        <p>Average warning before the money is asked for.
+           ${n(m.flagged_before_ask)} of ${n(m.convos_with_ask)} conversations were
+           flagged before the request arrived.</p>
+      </div>
+      <div class="ev-card">
+        <h3>Unseen scam type</h3>
+        <div class="ev-big">${Math.round(m.novel_recall*100)}%</div>
+        <p>Recall on <b>${m.novel_archetype}</b> scams, an archetype held out of
+           training entirely. It generalises rather than memorising.</p>
+      </div>
+      <div class="ev-card">
+        <h3>Ranking quality</h3>
+        <div class="ev-big">${m.conv_ap}</div>
+        <p>Average precision per conversation (${m.msg_ap} per message).
+           How well it ranks scams above legitimate chats, at any threshold.</p>
+      </div>
     </div>
-    <div>
-      <h2>Scammer rewrites to evade</h2>
-      <svg id="chart" width="284" height="140"></svg>
-      <div class="cap"><b style="color:var(--amber)">Text-only</b> recall falls as the scammer paraphrases. The <b style="color:var(--green)">fusion</b> layer holds — a first-time payee can't be reworded.</div>
+
+    <div class="ev-chart">
+      <h3>What happens when the scammer rewrites the message</h3>
+      <div class="ev-chart-body">
+        <svg id="chart" width="300" height="150"></svg>
+        <p class="cap"><b style="color:var(--amber)">Text-only</b> recall falls from
+           ${Math.round(m.evade_curve[0].text_only_recall*100)}% to
+           ${Math.round(m.evade_curve[m.evade_curve.length-1].text_only_recall*100)}%
+           as the wording is paraphrased away. The
+           <b style="color:var(--green)">fusion</b> layer stays flat at
+           ${Math.round(m.evade_curve[0].fusion_recall*100)}% - a first-time payee
+           and an odd-hour faster payment cannot be reworded.</p>
+      </div>
     </div>`;
   drawChart(m.evade_curve);
 }
 
 function drawChart(curve){
   if(!window.d3) return;
-  const w=284,h=140,mL=32,mB=22,mT=8,mR=8;
+  const w=300,h=150,mL=34,mB=22,mT=8,mR=12;
   const svg=d3.select("#chart");
   const x=d3.scaleLinear().domain([0,1]).range([mL,w-mR]);
   const y=d3.scaleLinear().domain([0,1]).range([h-mB,mT]);

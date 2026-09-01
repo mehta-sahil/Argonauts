@@ -69,6 +69,143 @@
   }
   .empty { padding:40px; color:var(--muted); text-align:center; }
   code { background:var(--panel2); padding:1px 4px; border-radius:4px; font-family:ui-monospace,monospace; }
+
+  /* ---- three-screen shell ---- */
+  .lab-head{padding:26px 24px 0;max-width:1080px;margin:0 auto;width:100%;}
+  .lab-head h1{font-family:'Space Grotesk',system-ui,sans-serif;font-size:26px;
+        font-weight:600;margin:0 0 18px;letter-spacing:-.01em;}
+  .viewnav{display:flex;gap:8px;border-bottom:1px solid var(--line);}
+  .vbtn{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;
+        padding:10px 4px;margin-right:18px;font-size:14px;font-weight:600;
+        color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s;}
+  .vbtn:hover{color:var(--text);}
+  .vbtn.is-on{color:var(--text);border-bottom-color:var(--accent);}
+
+  .lab-stage{flex:1;min-height:0;display:flex;overflow-y:auto;
+        scrollbar-width:thin;scrollbar-color:#33373E transparent;}
+  .lab-stage::-webkit-scrollbar{width:10px;}
+  .lab-stage::-webkit-scrollbar-track{background:transparent;}
+  .lab-stage::-webkit-scrollbar-thumb{background:#33373E;border-radius:999px;
+        border:3px solid var(--bg);background-clip:content-box;}
+  .view{display:none;flex:1;min-height:0;flex-direction:column;gap:14px;
+        padding:20px 24px 28px;max-width:1080px;margin:0 auto;width:100%;}
+  .view.is-on{display:flex;}
+  .view-sub{margin:0;font-size:13px;color:var(--muted);line-height:1.6;}
+
+  /* ---- controls: a proper bar, not a panel floating over the graph ---- */
+  .ctl-bar{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap;
+        background:var(--panel);border:1px solid var(--line);
+        border-radius:10px;padding:14px 16px;}
+  .ctl{display:flex;flex-direction:column;gap:7px;min-width:170px;}
+  .ctl.grow{flex:1;min-width:220px;}
+  .ctl-lb{font-size:11px;font-weight:600;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.5px;}
+  .ctl-lb b{color:var(--text);font-family:ui-monospace,'JetBrains Mono',monospace;
+        font-weight:600;font-variant-numeric:tabular-nums;}
+  .ctl select{background:var(--panel2,#1C1F24);border:1px solid var(--line);color:var(--text);
+        border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;width:100%;}
+
+  .seg{display:inline-flex;background:var(--panel2,#1C1F24);border:1px solid var(--line);
+        border-radius:7px;padding:2px;}
+  .seg button{background:none;border:none;border-radius:5px;padding:6px 14px;
+        font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s;}
+  .seg button.is-on{background:var(--accent);color:#0A0B0D;}
+
+  /* Sliders: flat track, square-ish handle, no default browser chrome. */
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;
+        background:transparent;cursor:pointer;margin:0;}
+  input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:#2A2F39;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+        width:12px;height:16px;border-radius:2px;background:var(--text);
+        border:none;margin-top:-6.5px;transition:background .15s;}
+  input[type=range]:hover::-webkit-slider-thumb{background:var(--accent);}
+  input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:#2A2F39;}
+  input[type=range]::-moz-range-thumb{width:12px;height:16px;border-radius:2px;
+        background:var(--text);border:none;}
+
+  .ring-facts{display:flex;gap:20px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);
+        padding-bottom:5px;}
+  .ring-facts b{color:var(--text);font-family:ui-monospace,monospace;font-weight:600;}
+
+  /* ---- graph ---- */
+  #graphHost{width:100%;height:100%;}
+  /* flex:0 0 auto matters: inside the flex column the slot was being shrunk
+     well below its stated height, which is what squashed the graph. */
+  .graph-slot{width:100%;flex:0 0 auto;height:clamp(460px,72vh,820px);
+        border:1px solid var(--line);
+        border-radius:10px;background:
+          radial-gradient(circle at 50% 45%, #12151C 0%, #0A0B0D 72%);
+        overflow:hidden;}
+  .graph-slot > #graphHost{height:100%;}
+  .node-info{max-width:calc(100vw - 36px);}
+  #svg{width:100%;height:100%;display:block;cursor:grab;}
+  #svg:active{cursor:grabbing;}
+  .nd{cursor:pointer;transition:fill .25s,fill-opacity .25s,stroke-width .15s;}
+  .nd:hover{stroke:#F5F6F7 !important;stroke-width:2 !important;}
+  .lnk{stroke:#2A303B;stroke-width:.6;stroke-opacity:.5;transition:stroke .25s,stroke-opacity .25s;}
+  .lnk.launder{stroke:#6B5320;stroke-width:1.2;stroke-opacity:.6;}
+  .lnk.on{stroke:#F5A524;stroke-width:1.8;stroke-opacity:.95;}
+  .lnk.off{stroke-opacity:.10;}
+
+  .legend{display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--muted);}
+  .legend span{display:inline-flex;align-items:center;gap:7px;}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;}
+
+  /* ---- scoreboard ---- */
+  .board{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 15px;}
+  .stat b{display:block;font-family:ui-monospace,'JetBrains Mono',monospace;
+        font-size:23px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;}
+  .stat .lb{display:block;font-size:12px;color:var(--text);margin-top:4px;}
+  .stat .sb{display:block;font-size:11px;color:var(--muted);margin-top:3px;}
+  .stat.key{border-color:rgba(34,211,238,.35);background:rgba(34,211,238,.05);}
+  .stat.key b{color:var(--accent);}
+  .stat.bad b{color:var(--red,#E5484D);}
+
+  /* ---- node panel ---- */
+  .node-info{position:fixed;right:18px;bottom:18px;width:250px;z-index:50;
+        background:rgba(16,18,23,.96);border:1px solid var(--line);border-radius:10px;
+        padding:14px;font-size:12.5px;backdrop-filter:blur(8px);}
+  .node-info .ph{color:var(--muted);font-size:12px;}
+  .ni-head{font-weight:600;font-size:13.5px;color:var(--text);margin-bottom:9px;
+        display:flex;justify-content:space-between;align-items:baseline;}
+  .ni-head span{font-size:11px;color:var(--muted);font-weight:400;}
+  .ni-row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;
+        border-top:1px solid var(--line);}
+  .ni-row span{color:var(--muted);}
+  .ni-row b{font-family:ui-monospace,monospace;font-weight:600;color:var(--text);}
+  .reveal{background:none;border:1px dashed var(--line);color:var(--muted);
+        border-radius:5px;padding:1px 9px;font-size:11px;cursor:pointer;font-family:inherit;}
+  .reveal:hover{color:var(--text);border-color:var(--muted);}
+  .ni-note{margin:10px 0 0;font-size:11.5px;line-height:1.55;color:var(--muted);
+        border-top:1px solid var(--line);padding-top:9px;}
+
+  /* ---- evidence ---- */
+  .ev-claim{font-size:15px;line-height:1.65;color:var(--text);
+        border-left:2px solid var(--accent);padding:2px 0 2px 14px;margin-bottom:24px;}
+  .ev-claim b{font-weight:700;}
+  .hh{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:24px;}
+  .hh th{text-align:right;padding:0 0 10px;font-size:11px;font-weight:600;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);}
+  .hh th:first-child{text-align:left;}
+  .hh td{padding:14px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+  .hh-l b{display:block;font-weight:600;}
+  .hh-l span{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
+  .hh-n{text-align:right;width:170px;}
+  .hh-n b{font-family:ui-monospace,monospace;font-size:17px;font-weight:600;color:var(--muted);}
+  .hh-n.hh-win b{color:var(--accent);}
+  .ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+        gap:14px;margin-bottom:22px;}
+  .ev-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:15px;}
+  .ev-card h3{margin:0;font-size:11px;font-weight:600;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.5px;}
+  .ev-big{font-family:ui-monospace,monospace;font-size:25px;font-weight:600;
+        color:var(--text);margin:8px 0 6px;}
+  .ev-card p{margin:0;font-size:12px;line-height:1.55;color:var(--muted);}
+  .ev-note{font-size:12.5px;line-height:1.65;color:var(--muted);background:var(--panel);
+        border:1px solid var(--line);border-radius:10px;padding:15px;}
+  .ev-note b{color:var(--text);}
+
 </style>
 
 <!-- ARGONAUTS SHARED DESIGN SYSTEM -->
@@ -182,172 +319,401 @@
     All Labs
   </a>
 </nav>
-<header>
-  <div>
-    <h1>Mule-Account Layering &mdash; GNN vs GenAI</h1>
-    <div class="sub">An LLM agent designs a fan-out / layering / gather laundering chain. A 2-layer GraphSAGE model flags the mule accounts from transaction topology.</div>
-  </div>
-</header>
-
-<div class="main">
-  <div class="graph">
-    <div class="controls">
-      <div>
-        <label for="colorBy">Colour nodes by</label>
-        <select id="colorBy">
-          <option value="score">GraphSAGE risk score</option>
-          <option value="lr_score">Tabular model score</option>
-          <option value="truth">Ground truth (the real ring)</option>
-          <option value="none">Nothing (raw graph)</option>
-        </select>
-      </div>
-      <div>
-        <label for="thresh">Dim nodes below score <span id="threshVal">0.00</span></label>
-        <input id="thresh" type="range" min="0" max="1" step="0.01" value="0">
-      </div>
-      <div class="row"><input type="checkbox" id="showLaunder" checked><label for="showLaunder" style="text-transform:none;font-size:12px;letter-spacing:0">show laundering transfers</label></div>
-      <div class="row"><input type="checkbox" id="showNormal" checked><label for="showNormal" style="text-transform:none;font-size:12px;letter-spacing:0">show normal transfers</label></div>
-    </div>
-    <svg id="svg"></svg>
-    <div class="tip" id="tip"></div>
-  </div>
-
-  <div class="side" id="side">
-    <div class="empty" id="noData">
-      <b>demo_data.js not found.</b><br><br>
-      Run <code>python run.py</code> in this folder first, then reload.
-    </div>
-  </div>
+<div class="lab-head">
+  <h1>Can a bank spot money mules from the shape of transfers?</h1>
+  <nav class="viewnav">
+    <button class="vbtn is-on" data-view="follow">Follow the money</button>
+    <button class="vbtn" data-view="find">Find the mules</button>
+    <button class="vbtn" data-view="evidence">Evidence</button>
+  </nav>
 </div>
+
+<!-- One graph, moved between the two screens that use it. -->
+<div id="graphHost"><svg id="svg"></svg></div>
+
+<main class="lab-stage">
+
+  <section class="view is-on" id="view-follow">
+    <p class="view-sub">Each ring starts at one source account, fans out to mules, hops through
+      layers, then gathers into cash-out accounts. No single transfer looks wrong.</p>
+
+    <div class="ctl-bar">
+      <label class="ctl">
+        <span class="ctl-lb">Laundering ring</span>
+        <select id="ringPick"></select>
+      </label>
+      <div class="ring-facts" id="ringFacts"></div>
+    </div>
+
+    <div class="graph-slot" id="slot-follow"></div>
+
+    <div class="legend">
+      <span><i style="background:#38BDF8"></i>Source</span>
+      <span><i style="background:#F5A524"></i>Layer mule</span>
+      <span><i style="background:#E5484D"></i>Cash-out</span>
+      <span><i style="background:#39414F"></i>Everyone else</span>
+    </div>
+  </section>
+
+  <section class="view" id="view-find">
+    <p class="view-sub">Now the labels are gone. Pick a detector, decide how many accounts you
+      can afford to investigate, and see what you caught.</p>
+
+    <div class="ctl-bar">
+      <div class="ctl">
+        <span class="ctl-lb">Detector</span>
+        <div class="seg">
+          <button class="mdl is-on" data-model="score">GraphSAGE</button>
+          <button class="mdl" data-model="lr_score">Tabular</button>
+        </div>
+      </div>
+      <label class="ctl grow">
+        <span class="ctl-lb">Flag at score <b id="thVal">0.50</b></span>
+        <input id="th" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+      <label class="ctl grow">
+        <span class="ctl-lb">Alert budget <b id="bgVal">16</b> accounts</span>
+        <input id="bg" type="range" min="4" max="60" step="1" value="16">
+      </label>
+    </div>
+
+    <div class="board" id="board"></div>
+    <div class="graph-slot" id="slot-find"></div>
+  </section>
+
+  <section class="view" id="view-evidence">
+    <p class="view-sub">Two models over the same graph, five held-out splits.</p>
+    <div id="evidence"></div>
+  </section>
+
+</main>
+
+<aside class="node-info" id="nodeInfo"></aside>
 
 <script>
 const DEMO = window.DEMO;
-const svg = d3.select("#svg");
-const tip = d3.select("#tip");
-
 if (!DEMO) {
-  d3.select("#svg").style("display", "none");
+  document.getElementById("graphHost").style.display = "none";
+  document.getElementById("evidence").innerHTML =
+    '<div class="ev-note"><b>demo_data.js not found.</b> Run <code>python run.py</code> in this folder, then reload.</div>';
 } else {
-  d3.select("#noData").remove();
-  render();
+// ---------------------------------------------------------------------------
+// One graph, two questions.
+//
+// "Follow the money" reveals ground truth: one laundering ring at a time, with
+// each account coloured by the role it actually plays. "Find the mules" hides
+// that and gives you a detector instead - pick a model, pick how many alerts
+// you can afford, and see what you caught.
+//
+// The simulation is built once and the <svg> is moved between the two screens,
+// because running two force layouts over 720 nodes to show the same graph twice
+// would be wasteful and they would drift out of sync.
+// ---------------------------------------------------------------------------
+
+const ROLE = {
+  source:  { c: "#38BDF8", label: "Source" },
+  mule:    { c: "#F5A524", label: "Layer mule" },
+  cashout: { c: "#E5484D", label: "Cash-out" },
+  none:    { c: "#39414F", label: "Ordinary account" }
+};
+
+let SIM = null, NODE = null, LINK = null, GROOT = null, ZOOM = null;
+let FIT_ALL = true;
+let VIEW = "follow";          // which screen owns the graph right now
+let RING = 0;                 // selected pattern on screen 1
+let MODEL = "score";          // "score" (GraphSAGE) | "lr_score" (tabular)
+let THRESH = 0.5;
+let BUDGET = 16;
+let PINNED = null;
+
+const roleOf = d => d.stage === "source" ? "source"
+               : d.stage === "cashout" ? "cashout"
+               : d.layer_mule ? "mule" : "none";
+
+function ringMembers(p) {
+  const s = new Set([p.source, ...p.mules, ...p.cashout]);
+  return s;
 }
 
-function render() {
-  const { nodes, links, meta } = DEMO;
-  buildSidebar(meta);
-
-  const el = document.querySelector(".graph");
-  let W = el.clientWidth, H = el.clientHeight;
+// --- the graph ------------------------------------------------------------
+function buildGraph() {
+  const { nodes, links } = DEMO;
+  const host = document.getElementById("graphHost");
+  const svg = d3.select("#svg");
+  const W = host.clientWidth || 900, H = host.clientHeight || 560;
   svg.attr("viewBox", [0, 0, W, H]);
 
-  const g = svg.append("g");
-  svg.call(d3.zoom().scaleExtent([0.2, 6]).on("zoom", e => g.attr("transform", e.transform)));
+  GROOT = svg.append("g");
+  ZOOM = d3.zoom().scaleExtent([0.25, 8]).on("zoom", e => GROOT.attr("transform", e.transform));
+  svg.call(ZOOM);
 
-  const linkSel = g.append("g").attr("stroke-opacity", 0.35)
-    .selectAll("line").data(links).join("line")
-    .attr("class", d => "link" + (d.kind === "launder" ? " launder" : ""))
-    .attr("stroke-width", d => d.kind === "launder" ? 1.6 : 0.5);
+  LINK = GROOT.append("g").selectAll("line").data(links).join("line")
+    .attr("class", d => "lnk " + d.kind);
 
-  const rScale = d3.scaleSqrt().domain(d3.extent(nodes, d => d.degree)).range([2.5, 9]);
-  const nodeSel = g.append("g")
-    .selectAll("circle").data(nodes).join("circle")
-    .attr("class", d => "node" + (d.label ? " chain" : ""))
-    .attr("r", d => rScale(d.degree))
-    .on("mousemove", (e, d) => showTip(e, d))
-    .on("mouseleave", () => tip.style("opacity", 0));
+  const r = d3.scaleSqrt().domain(d3.extent(nodes, d => d.degree)).range([3, 10]);
+  NODE = GROOT.append("g").selectAll("circle").data(nodes).join("circle")
+    .attr("class", "nd")
+    .attr("r", d => r(d.degree))
+    .on("click", (e, d) => { PINNED = d; paintInfo(); e.stopPropagation(); })
+    .on("mouseenter", (e, d) => { if (!PINNED) { PINNED = d; paintInfo(); PINNED = null; } });
 
-  const sim = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(28).strength(0.25))
-    .force("charge", d3.forceManyBody().strength(-26))
+  d3.select("#svg").on("click", () => { PINNED = null; paintInfo(); });
+
+  SIM = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(34).strength(0.22))
+    .force("charge", d3.forceManyBody().strength(-42))
     .force("center", d3.forceCenter(W / 2, H / 2))
-    .force("collide", d3.forceCollide().radius(d => rScale(d.degree) + 1.5))
-    .alphaDecay(0.035);
+    .force("collide", d3.forceCollide().radius(d => r(d.degree) + 2.5))
+    .alphaDecay(0.028);
 
-  sim.on("tick", () => {
-    linkSel.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-           .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-    nodeSel.attr("cx", d => d.x).attr("cy", d => d.y);
+  SIM.on("tick", () => {
+    LINK.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    NODE.attr("cx", d => d.x).attr("cy", d => d.y);
   });
-
-  // --- colouring / filtering ---
-  const reds = d3.scaleSequential(d3.interpolateReds).domain([0, 1]);
-  const colorBy = document.getElementById("colorBy");
-  const thresh = document.getElementById("thresh");
-  const threshVal = document.getElementById("threshVal");
-  const showLaunder = document.getElementById("showLaunder");
-  const showNormal = document.getElementById("showNormal");
-
-  function paint() {
-    const mode = colorBy.value;
-    const t = +thresh.value;
-    threshVal.textContent = t.toFixed(2);
-    nodeSel.attr("fill", d => {
-      if (mode === "none") return "#4b5566";
-      if (mode === "truth") return d.label ? (d.layer_mule ? "#fbbf24" : "#f87171") : "#3a4150";
-      return d[mode] < t ? "#232b3b" : reds(d[mode]);
-    }).attr("fill-opacity", d => {
-      if (mode === "none" || mode === "truth") return 1;
-      return d[mode] < t ? 0.3 : 1;
-    });
-  }
-  function filterLinks() {
-    linkSel.attr("display", d =>
-      (d.kind === "launder" ? showLaunder.checked : showNormal.checked) ? null : "none");
-  }
-  [colorBy, thresh].forEach(x => x.addEventListener("input", paint));
-  [showLaunder, showNormal].forEach(x => x.addEventListener("change", filterLinks));
-  paint(); filterLinks();
 
   window.addEventListener("resize", () => {
-    W = el.clientWidth; H = el.clientHeight;
-    svg.attr("viewBox", [0, 0, W, H]);
-    sim.force("center", d3.forceCenter(W / 2, H / 2)).alpha(0.3).restart();
+    const w = host.clientWidth, h = host.clientHeight;
+    if (!w || !h) return;
+    svg.attr("viewBox", [0, 0, w, h]);
+    SIM.force("center", d3.forceCenter(w / 2, h / 2)).alpha(0.2).restart();
   });
 }
 
-function showTip(e, d) {
-  const stage = d.stage ? d.stage : "&mdash;";
-  tip.html(
-    `account #${d.id} &nbsp; <b>${d.kind}</b><br>` +
-    `role: ${stage}${d.layer_mule ? " (bland layer mule)" : ""}<br>` +
-    `in a laundering ring: <b>${d.label ? "yes" : "no"}</b><br>` +
-    `GraphSAGE score: ${d.score.toFixed(3)}<br>` +
-    `tabular score: ${d.lr_score.toFixed(3)}<br>` +
-    `degree: ${d.degree}`
-  ).style("left", (e.offsetX + 16) + "px").style("top", (e.offsetY + 12) + "px")
-   .style("opacity", 1);
+// Frame a set of accounts. Without this the selected ring renders as a small
+// knot in the corner of a large empty canvas.
+function fitTo(ids) {
+  const pts = DEMO.nodes.filter(d => ids.has(d.id) && d.x != null);
+  if (pts.length < 2) return;
+  const host = document.getElementById("graphHost");
+  const W = host.clientWidth, H = host.clientHeight;
+  const xs = pts.map(d => d.x), ys = pts.map(d => d.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const pad = 70;
+  const k = Math.min(6, Math.max(0.3,
+    Math.min(W / (x1 - x0 + pad * 2), H / (y1 - y0 + pad * 2))));
+  const tx = W / 2 - k * (x0 + x1) / 2;
+  const ty = H / 2 - k * (y0 + y1) / 2;
+  d3.select("#svg").transition().duration(650)
+    .call(ZOOM.transform, d3.zoomIdentity.translate(tx, ty).scale(k));
 }
 
-function buildSidebar(meta) {
-  const m = meta.metrics;
-  const side = d3.select("#side");
+// --- screen 1: ground truth, one ring at a time ---------------------------
+function paintFollow() {
+  const p = DEMO.meta.patterns[RING];
+  const members = ringMembers(p);
 
-  side.append("div").html(`
-    <h2>Detection &mdash; held-out test, mean of 5 splits</h2>
-    <div class="metric"><span>Tabular model &mdash; avg precision</span>
-      <span class="v">${m.lr_ap_mean} &plusmn; ${m.lr_ap_std}</span></div>
-    <div class="metric"><span>GraphSAGE &mdash; avg precision</span>
-      <span class="v win">${m.gcn_ap_mean} &plusmn; ${m.gcn_ap_std}</span></div>
-    <div class="bars">
-      <div class="bar-row">bland layer mules caught by the tabular model &nbsp;<b>${Math.round(m.lr_bland_recall_mean*100)}%</b>
-        <div class="bar-track"><div class="bar-fill" style="width:${m.lr_bland_recall_mean*100}%;background:#8a97ac"></div></div></div>
-      <div class="bar-row">bland layer mules caught by GraphSAGE &nbsp;<b>${Math.round(m.gcn_bland_recall_mean*100)}%</b>
-        <div class="bar-track"><div class="bar-fill" style="width:${m.gcn_bland_recall_mean*100}%;background:#34d399"></div></div></div>
-    </div>`);
+  NODE.attr("fill", d => members.has(d.id) ? ROLE[roleOf(d)].c : ROLE.none.c)
+      .attr("fill-opacity", d => members.has(d.id) ? 1 : 0.16)
+      .attr("stroke", d => members.has(d.id) ? "#0A0B0D" : "none")
+      .attr("stroke-width", d => members.has(d.id) ? 1.5 : 0);
 
-  side.append("div").html(`
-    <h2>The attack (${meta.n_launder_txns} laundering transfers)</h2>
-    ${meta.patterns.map(p => `<div class="patt">ring ${p.pattern_id}: fan-out ${p.fanout} &rarr; ${p.layers} layer round(s) &rarr; gather ${p.gather} &nbsp; skim ${(p.cut_per_hop*100).toFixed(0)}%/hop &nbsp;[${p.backend}]</div>`).join("")}
-    <div class="patt" style="color:#e6ebf4;margin-top:6px">${meta.n_accounts} accounts, ${meta.n_txns} transactions, ${m.n_layer_mules} bland layer mules</div>`);
+  LINK.attr("class", d => {
+    const inRing = members.has(d.source.id ?? d.source) && members.has(d.target.id ?? d.target);
+    return "lnk " + d.kind + (inRing ? " on" : " off");
+  });
 
-  side.append("div").attr("class", "legend").html(`
-    <h2>Legend</h2>
-    <div><span class="sw" style="background:#f87171"></span>source / cash-out (visible on its own)</div>
-    <div><span class="sw" style="background:#fbbf24"></span>bland layer mule (only the graph gives it away)</div>
-    <div><span class="sw" style="background:#67000d"></span>&nbsp;&rarr;&nbsp;<span class="sw" style="background:#fff5f0"></span> risk score, high &rarr; low</div>
-    <div><span class="sw" style="background:#fbbf24;height:3px"></span>laundering transfer</div>`);
+  const skim = (p.cut_per_hop * 100).toFixed(1);
+  document.getElementById("ringFacts").innerHTML =
+    '<span><b>' + p.fanout + '</b> accounts fanned out from one source</span>' +
+    '<span><b>' + p.layers + '</b> layer hop' + (p.layers > 1 ? "s" : "") + '</span>' +
+    '<span>gathered into <b>' + p.gather + '</b> cash-out' + (p.gather > 1 ? "s" : "") + '</span>' +
+    '<span><b>' + skim + '%</b> skimmed per hop</span>';
 
-  side.append("div").attr("class", "narr").text(meta.narrative);
+  fitTo(members);
+}
+
+// --- screen 2: detection ---------------------------------------------------
+function stats() {
+  const ns = DEMO.nodes;
+  const flagged = ns.filter(d => d[MODEL] >= THRESH);
+  const hit = flagged.filter(d => d.label === 1).length;
+  const fp = flagged.length - hit;
+
+  const ranked = [...ns].sort((a, b) => b[MODEL] - a[MODEL]).slice(0, BUDGET);
+  const topHit = ranked.filter(d => d.label === 1).length;
+  const topMule = ranked.filter(d => d.layer_mule).length;
+
+  return {
+    flagged: flagged.length, hit, fp,
+    ringTotal: ns.filter(d => d.label === 1).length,
+    muleTotal: ns.filter(d => d.layer_mule).length,
+    topHit, topMule,
+    topIds: new Set(ranked.map(d => d.id))
+  };
+}
+
+function paintFind() {
+  const s = stats();
+  if (FIT_ALL) { FIT_ALL = false; fitTo(new Set(DEMO.nodes.map(d => d.id))); }
+  const heat = d3.scaleSequential(d3.interpolateInferno).domain([0, 1]);
+
+  NODE.attr("fill", d => d[MODEL] >= THRESH ? heat(d[MODEL]) : "#232A36")
+      .attr("fill-opacity", d => d[MODEL] >= THRESH ? 1 : 0.35)
+      .attr("stroke", d => s.topIds.has(d.id) ? "#F5F6F7" : "none")
+      .attr("stroke-width", d => s.topIds.has(d.id) ? 1.6 : 0);
+
+  LINK.attr("class", d => "lnk " + d.kind + " off");
+
+  document.getElementById("thVal").textContent = THRESH.toFixed(2);
+  document.getElementById("bgVal").textContent = BUDGET;
+
+  const prec = s.flagged ? Math.round(100 * s.hit / s.flagged) : 0;
+  const rec = Math.round(100 * s.hit / s.ringTotal);
+  document.getElementById("board").innerHTML =
+    stat(s.flagged, "accounts flagged", "at score ≥ " + THRESH.toFixed(2)) +
+    stat(s.hit + "/" + s.ringTotal, "real ring accounts caught", rec + "% recall") +
+    stat(s.fp, "innocent accounts flagged", prec + "% of alerts were real", s.fp > s.hit ? "bad" : "") +
+    stat(s.topMule + "/" + s.muleTotal, "layer mules in your top " + BUDGET,
+         "the hard class - they look ordinary alone", "key");
+}
+
+function stat(big, label, sub, tone) {
+  return '<div class="stat ' + (tone || "") + '"><b>' + big + '</b>' +
+         '<span class="lb">' + label + '</span><span class="sb">' + sub + '</span></div>';
+}
+
+// --- shared node panel -----------------------------------------------------
+function paintInfo() {
+  const el = document.getElementById("nodeInfo");
+  if (!PINNED) {
+    el.innerHTML = '<span class="ph">Click any account to inspect it.</span>';
+    return;
+  }
+  const d = PINNED;
+  const role = roleOf(d);
+  const ring = DEMO.meta.patterns.findIndex(p => ringMembers(p).has(d.id));
+
+  let truth = "";
+  if (VIEW === "follow") {
+    truth = '<div class="ni-row"><span>Role</span><b style="color:' + ROLE[role].c + '">' +
+            ROLE[role].label + "</b></div>" +
+            (ring >= 0 ? '<div class="ni-row"><span>Ring</span><b>#' + ring + "</b></div>" : "");
+  } else {
+    // On the detection screen the answer stays hidden until you ask for it -
+    // otherwise there is no decision left to make.
+    truth = '<div class="ni-row"><span>Truth</span>' +
+            '<button class="reveal" onclick="this.outerHTML=\'<b style=&quot;color:' +
+            ROLE[role].c + '&quot;>' + ROLE[role].label + '</b>\'">reveal</button></div>';
+  }
+
+  el.innerHTML =
+    '<div class="ni-head">Account ' + d.id + ' <span>' + d.kind + "</span></div>" +
+    truth +
+    '<div class="ni-row"><span>Transfers</span><b>' + d.degree + "</b></div>" +
+    '<div class="ni-row"><span>GraphSAGE</span><b>' + d.score.toFixed(3) + "</b></div>" +
+    '<div class="ni-row"><span>Tabular</span><b>' + d.lr_score.toFixed(3) + "</b></div>" +
+    (d.layer_mule
+      ? '<p class="ni-note">A layer mule. Its own transfers are unremarkable - ' +
+        'the tabular model scores it ' + d.lr_score.toFixed(2) + '. GraphSAGE scores it ' +
+        d.score.toFixed(2) + ' because of the shape of the accounts around it.</p>'
+      : "");
+}
+
+// --- evidence --------------------------------------------------------------
+function paintEvidence() {
+  const m = DEMO.meta.metrics, meta = DEMO.meta;
+  const pc = v => Math.round(v * 100) + "%";
+  const gcnWins = m.gcn_ap_mean > m.lr_ap_mean;
+
+  document.getElementById("evidence").innerHTML =
+    '<div class="ev-claim">A mule’s own transactions look ordinary, so a model that reads ' +
+    'transactions alone misses them. Reading the <b>shape of the graph</b> instead lifts average ' +
+    'precision from <b>' + m.lr_ap_mean.toFixed(3) + '</b> to <b>' + m.gcn_ap_mean.toFixed(3) +
+    '</b>, and on the hard class - mules whose own behaviour is bland - from <b>' +
+    pc(m.lr_bland_recall_mean) + '</b> to <b>' + pc(m.gcn_bland_recall_mean) + '</b>.</div>' +
+
+    '<table class="hh"><thead><tr><th></th><th>Tabular model</th><th>GraphSAGE</th></tr></thead><tbody>' +
+    row("Average precision", "held-out test, mean of 5 splits",
+        m.lr_ap_mean.toFixed(3) + " ± " + m.lr_ap_std.toFixed(3),
+        m.gcn_ap_mean.toFixed(3) + " ± " + m.gcn_ap_std.toFixed(3), gcnWins) +
+    row("Bland layer mules caught", "the " + m.n_layer_mules + " that look ordinary on their own",
+        pc(m.lr_bland_recall_mean), pc(m.gcn_bland_recall_mean), true) +
+    "</tbody></table>" +
+
+    '<div class="ev-grid">' +
+    card("What the bank sees", meta.n_accounts.toLocaleString(),
+         "accounts and " + meta.n_txns.toLocaleString() + " transfers, of which only " +
+         meta.n_launder_txns + " are laundering. That is " +
+         (100 * meta.n_launder_txns / meta.n_txns).toFixed(1) + "% of the traffic.") +
+    card("Alert budget of " + m.k, pc(m.precision_at_k),
+         "of the top " + m.k + " accounts are real. Recall at that budget is " +
+         pc(m.recall_at_k) + ".") +
+    card("Rings planted", DEMO.meta.patterns.length,
+         "fan-out → layer → gather chains, each designed by the LLM planner with its own " +
+         "width, depth and skim rate.") +
+    "</div>" +
+
+    '<div class="ev-note"><b>Read the spread, not just the mean.</b> The tabular model varies ' +
+    '±' + m.lr_ap_std.toFixed(3) + ' across splits against GraphSAGE’s ±' +
+    m.gcn_ap_std.toFixed(3) + '. It is not only worse on average, it is less dependable run to run - ' +
+    'which matters more than the headline number when the thing is deciding who gets investigated.</div>';
+}
+
+function row(label, sub, a, b, bWins) {
+  return '<tr><td class="hh-l"><b>' + label + '</b><span>' + sub + "</span></td>" +
+         '<td class="hh-n"><b>' + a + "</b></td>" +
+         '<td class="hh-n ' + (bWins ? "hh-win" : "") + '"><b>' + b + "</b></td></tr>";
+}
+function card(h, big, p) {
+  return '<div class="ev-card"><h3>' + h + '</h3><div class="ev-big">' + big + "</div><p>" + p + "</p></div>";
+}
+
+// --- wiring ----------------------------------------------------------------
+function boot() {
+  buildGraph();
+
+  const sel = document.getElementById("ringPick");
+  DEMO.meta.patterns.forEach((p, i) => {
+    sel.add(new Option("Ring " + i + " — " + p.fanout + " mules, " + p.layers +
+                       " layer" + (p.layers > 1 ? "s" : ""), i));
+  });
+  sel.onchange = () => { RING = +sel.value; paintFollow(); };
+
+  document.querySelectorAll(".mdl").forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll(".mdl").forEach(x => x.classList.toggle("is-on", x === b));
+      MODEL = b.dataset.model;
+      paintFind();
+    };
+  });
+
+  const th = document.getElementById("th"), bg = document.getElementById("bg");
+  th.oninput = () => { THRESH = +th.value; paintFind(); };
+  bg.oninput = () => { BUDGET = +bg.value; paintFind(); };
+  bg.max = 60;
+
+  document.querySelectorAll(".vbtn").forEach(b => {
+    b.onclick = () => {
+      VIEW = b.dataset.view;
+      document.querySelectorAll(".vbtn").forEach(x => x.classList.toggle("is-on", x === b));
+      document.querySelectorAll(".view").forEach(v => v.classList.toggle("is-on", v.id === "view-" + VIEW));
+
+      // Hand the one graph to whichever screen is now showing.
+      const slot = document.getElementById("slot-" + VIEW);
+      if (slot) {
+        slot.appendChild(document.getElementById("graphHost"));
+        const h = document.getElementById("graphHost");
+        d3.select("#svg").attr("viewBox", [0, 0, h.clientWidth, h.clientHeight]);
+        SIM.force("center", d3.forceCenter(h.clientWidth / 2, h.clientHeight / 2)).alpha(0.15).restart();
+      }
+      PINNED = null;
+      paintInfo();
+      if (VIEW === "follow") paintFollow();
+      if (VIEW === "find") { FIT_ALL = true; paintFind(); }
+      document.querySelector(".lab-stage").scrollTop = 0;
+    };
+  });
+
+  setTimeout(paintFollow, 900);
+  paintFollow();
+  paintInfo();
+  paintEvidence();
+}
+
+  document.getElementById("slot-follow").appendChild(document.getElementById("graphHost"));
+  boot();
 }
 </script>
 </body>

@@ -37,3 +37,4 @@ Thumbs.db
 
 # Copied lab config carrying a real deployed endpoint — never commit
 Kyc identity theft/frontend/public/labs/distributed-cvv-guessing/config.js
+voice-auth-bypass/.env

@@ -61,6 +61,95 @@
   .axis text{fill:var(--muted);font-size:10px;} .axis path,.axis line{stroke:var(--line);}
   .empty{padding:40px;color:var(--muted);text-align:center;}
   code{background:var(--panel2);padding:1px 4px;border-radius:4px;font-family:ui-monospace,monospace;}
+
+  /* ---- three-screen shell (same system as the other labs) ---- */
+  .lab-head{padding:26px 24px 0;max-width:920px;margin:0 auto;width:100%;}
+  .lab-head h1{font-family:'Space Grotesk',system-ui,sans-serif;font-size:26px;
+        font-weight:600;margin:0 0 18px;letter-spacing:-.01em;}
+  .viewnav{display:flex;gap:8px;border-bottom:1px solid var(--line);}
+  .vbtn{background:none;border:none;border-bottom:2px solid transparent;border-radius:0;
+        padding:10px 4px;margin-right:18px;font-size:14px;font-weight:600;
+        color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s;}
+  .vbtn:hover{color:var(--text);}
+  .vbtn.is-on{color:var(--text);border-bottom-color:var(--accent);}
+
+  .lab-stage{flex:1;min-height:0;display:flex;overflow-y:auto;scroll-behavior:smooth;
+        scrollbar-width:thin;scrollbar-color:#33373E transparent;}
+  .lab-stage::-webkit-scrollbar{width:10px;}
+  .lab-stage::-webkit-scrollbar-track{background:transparent;}
+  .lab-stage::-webkit-scrollbar-thumb{background:#33373E;border-radius:999px;
+        border:3px solid var(--bg);background-clip:content-box;}
+  .lab-stage::-webkit-scrollbar-thumb:hover{background:#4A4F57;background-clip:content-box;}
+
+  .view{display:none;flex:1;min-height:0;flex-direction:column;gap:16px;
+        padding:22px 24px 32px;max-width:920px;margin:0 auto;width:100%;}
+  .view.is-on{display:flex;}
+  .view-sub{margin:0;font-size:13px;color:var(--muted);line-height:1.6;}
+  #view-evidence .side{width:auto;border-left:none;background:none;padding:0;
+        display:flex;flex-direction:column;gap:26px;min-width:0;}
+
+  /* ---- hear it ---- */
+  .hear-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+  .hear-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;}
+  .hear-card.is-clone{border-color:rgba(229,72,77,.4);background:rgba(229,72,77,.05);}
+  .hear-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.6px;
+        text-transform:uppercase;padding:3px 9px;border-radius:999px;
+        background:rgba(34,211,238,.15);color:var(--green,#22D3EE);margin-bottom:10px;}
+  .hear-card.is-clone .hear-tag{background:rgba(229,72,77,.18);color:var(--red,#E5484D);}
+  .hear-card h3{margin:0 0 3px;font-size:15px;font-weight:600;color:var(--text);}
+  .hear-lang{margin:0 0 12px;font-size:12px;color:var(--muted);
+        font-family:ui-monospace,'JetBrains Mono',monospace;}
+  .hear-card audio{width:100%;height:36px;}
+
+  .hear-script{background:var(--panel);border:1px solid var(--line);
+        border-radius:12px;padding:18px;}
+  .hear-script h4{margin:0 0 10px;font-size:11px;font-weight:600;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.5px;}
+  .hear-script p{margin:0;font-size:14px;line-height:1.7;color:var(--text);}
+  .hear-note{margin-top:12px !important;font-size:12px !important;color:var(--muted) !important;
+        border-top:1px solid var(--line);padding-top:12px;}
+
+
+  /* ---- try it: pick a direction, record, clone ---- */
+  .dir-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+  .dir-card{text-align:left;background:var(--panel);border:1px solid var(--line);
+        border-radius:12px;padding:16px;cursor:pointer;transition:.15s;display:block;}
+  .dir-card:hover{border-color:var(--muted);}
+  .dir-card.is-on{border-color:var(--accent);background:rgba(34,211,238,.06);}
+  .dir-flow{display:block;font-family:'Space Grotesk',system-ui,sans-serif;
+        font-size:16px;font-weight:600;color:var(--text);margin-bottom:5px;}
+  .dir-flow em{font-style:normal;color:var(--accent);margin:0 4px;}
+  .dir-desc{display:block;font-size:12px;color:var(--muted);line-height:1.5;}
+  .try-script{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+        padding:18px;font-size:15px;line-height:1.75;color:var(--text);}
+  .try-script h4{margin:0 0 10px;font-size:11px;font-weight:600;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.5px;}
+  .try-script p{margin:0;}
+  .try-script .roman{margin-top:10px;font-size:12.5px;color:var(--muted);font-style:italic;}
+  .try-rec{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+        background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .rec-state{font-size:12px;color:var(--muted);font-family:ui-monospace,monospace;}
+  .rec-meter{flex:1;min-width:140px;height:6px;border-radius:999px;
+        background:var(--panel2,#1C1F24);overflow:hidden;}
+  .rec-meter-fill{height:100%;width:0;background:var(--accent);transition:width .08s linear;}
+  .primary-btn,#recBtn{background:var(--text);border:1px solid var(--text);color:#0B0C16;
+        border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+  #recBtn.is-rec{background:var(--red,#E5484D);border-color:var(--red,#E5484D);color:#fff;}
+  .try-out{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;}
+  .call-sim-head{margin-top:10px;font-family:'Space Grotesk',system-ui,sans-serif;
+        font-size:17px;font-weight:600;color:var(--text);
+        border-top:1px solid var(--line);padding-top:20px;}
+
+
+  .try-out h4{margin:0 0 8px;font-size:11px;font-weight:600;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.5px;}
+  .try-out audio{width:100%;height:36px;}
+  .clone-status{margin-top:14px;padding:12px 14px;border-radius:9px;font-size:13px;
+        line-height:1.6;background:var(--panel2,#1C1F24);color:var(--muted);
+        border-left:2px solid var(--line);}
+  .clone-status.is-ok{border-left-color:var(--green,#22D3EE);color:var(--text);}
+  .clone-status.is-bad{border-left-color:var(--red,#E5484D);color:var(--text);}
+
 </style>
 
 <!-- ARGONAUTS SHARED DESIGN SYSTEM -->
@@ -174,14 +263,77 @@
     All Labs
   </a>
 </nav>
-<header>
-  <div>
-    <h1>Voice-Auth Bypass Arena</h1>
-    <div class="sub">A cloned voice phones in a payment authorization. Voiceprint passes it. Only the callback protocol stops a good clone.</div>
-  </div>
-</header>
-<div class="main">
-  <div class="center" id="center">
+<div class="lab-head">
+  <h1>Can a cloned voice authorise a payment?</h1>
+  <nav class="viewnav">
+    <button class="vbtn is-on" data-view="try">Try it</button>
+    <button class="vbtn" data-view="call">Watch a call</button>
+    <button class="vbtn" data-view="evidence">Evidence</button>
+  </nav>
+</div>
+
+<main class="lab-stage">
+
+  <!-- Real recording vs the clone Sarvam produced from it. Same person, same
+       27 seconds; the machine-readable difference is the point of the lab. -->
+  <section class="view is-on" id="view-try">
+    <p class="view-sub">Record yourself, and hear the clone say something you never said.
+      Pick which way round you want it.</p>
+
+    <div class="dir-grid">
+      <button class="dir-card is-on" data-src="en-IN" data-tgt="hi-IN">
+        <span class="dir-flow">English <em>&rarr;</em> Hindi</span>
+        <span class="dir-desc">Read the English script. Hear your voice speak Hindi.</span>
+      </button>
+      <button class="dir-card" data-src="hi-IN" data-tgt="en-IN">
+        <span class="dir-flow">Hindi <em>&rarr;</em> English</span>
+        <span class="dir-desc">Read the Hindi script. Hear your voice speak English.</span>
+      </button>
+    </div>
+
+    <div class="try-script" id="tryScript"></div>
+
+    <div class="try-rec">
+      <button class="primary-btn" id="recBtn">Start recording</button>
+      <span class="rec-state" id="recState">about 25 seconds is enough</span>
+      <div class="rec-meter"><div class="rec-meter-fill" id="recMeter"></div></div>
+    </div>
+
+    <div class="try-out" id="tryOut" hidden></div>
+  </section>
+
+  <section class="view" id="view-call">
+    <p class="view-sub">A real recording and the clone built from it, then the same call run
+      against each defence.</p>
+
+    <div class="hear-grid">
+      <div class="hear-card">
+        <div class="hear-tag">Real</div>
+        <h3>Recorded by a person</h3>
+        <p class="hear-lang">English &middot; 27s</p>
+        <audio controls preload="metadata" src="audio/real_english.mp3"></audio>
+      </div>
+      <div class="hear-card is-clone">
+        <div class="hear-tag">Clone</div>
+        <h3>Generated from that clip</h3>
+        <p class="hear-lang">Hindi &middot; 27s</p>
+        <audio controls preload="metadata" src="audio/clone_hindi.mp3"></audio>
+      </div>
+    </div>
+
+    <div class="hear-script">
+      <h4>What was recorded</h4>
+      <p>&ldquo;Mum, it&rsquo;s me &mdash; please don&rsquo;t hang up. I&rsquo;ve been in an accident and
+      I&rsquo;ve been arrested, and my lawyer needs two thousand pounds for bail before the
+      hearing this evening. Please don&rsquo;t tell Dad yet, I&rsquo;m too embarrassed &mdash; keep
+      this between us for now. Don&rsquo;t call me back on this number, my phone&rsquo;s been taken.
+      Someone from the court will ring you shortly to take the payment.&rdquo;</p>
+      <p class="hear-note">Roughly 27 seconds of audio was enough. The clone was not trained
+      on the Hindi words it speaks - it was built from the English clip alone.</p>
+    </div>
+
+    <div class="call-sim-head">The same call, screened</div>
+    <p class="view-sub">Pick a scenario, a defence, and how good the clone is.</p>
     <div class="controls">
       <select id="scenario"><option value="ceo_wire">CEO-fraud wire</option><option value="family_bail">Family "bail" scam</option></select>
       <span class="cfgtabs" id="cfgtabs"></span>
@@ -190,10 +342,187 @@
       <span id="qlabel" style="font-size:11px;color:var(--muted)">mid</span>
     </div>
     <div id="slot"><div class="empty" id="noData">Run <code>python run.py</code> then reload.</div></div>
-  </div>
-  <div class="side" id="side"></div>
-</div>
+  </section>
+
+  <section class="view" id="view-evidence">
+    <p class="view-sub">How each defence performed across the whole run.</p>
+    <div class="side" id="side"></div>
+  </section>
+
+</main>
 <script>
+
+
+// --- try it: direction, script, recording ---------------------------------
+// Two independent one-hop directions. The service refuses same-language
+// dubbing, so the output language is always the other one.
+const SCRIPTS = {
+  "en-IN": {
+    title: "Read this aloud, in English",
+    body: "Mum, it’s me — please don’t hang up. I’ve been in an accident and I’ve been arrested, and my lawyer needs two thousand pounds for bail before the hearing this evening. Please don’t tell Dad yet, I’m too embarrassed — keep this between us for now. Don’t call me back on this number, my phone’s been taken. Someone from the court will ring you shortly to take the payment.",
+    roman: ""
+  },
+  "hi-IN": {
+    title: "Read this aloud, in Hindi",
+    body: "मम्मी, मैं बोल रहा हूँ — प्लीज़ फ़ोन मत काटना। मेरा एक्सीडेंट हो गया था और मुझे गिरफ़्तार कर लिया गया है, और मेरे वकील को आज शाम सुनवाई से पहले ज़मानत के लिए दो लाख रुपये चाहिए। प्लीज़ पापा को अभी मत बताना, मुझे बहुत शर्म आ रही है। इस नंबर पर वापस कॉल मत करना। कोर्ट से कोई आपको फ़ोन करके पेमेंट लेगा।",
+    roman: "Mummy, main bol raha hoon — please phone mat kaatna. Mera accident ho gaya tha aur mujhe giraftaar kar liya gaya hai, aur mere vakeel ko aaj shaam sunwai se pehle zamaanat ke liye do lakh rupaye chahiye. Please papa ko abhi mat batana, mujhe bahut sharm aa rahi hai. Is number par wapas call mat karna. Court se koi aapko phone karke payment lega."
+  }
+};
+
+let dirSrc = "en-IN", dirTgt = "hi-IN";
+
+function paintScript() {
+  const sc = SCRIPTS[dirSrc];
+  const el = document.getElementById("tryScript");
+  if (!el) return;
+  el.innerHTML = "<h4>" + sc.title + "</h4><p>" + sc.body + "</p>" +
+    (sc.roman ? '<p class="roman">' + sc.roman + "</p>" : "");
+}
+
+document.querySelectorAll(".dir-card").forEach(function (c) {
+  c.onclick = function () {
+    document.querySelectorAll(".dir-card").forEach(function (x) { x.classList.toggle("is-on", x === c); });
+    dirSrc = c.dataset.src;
+    dirTgt = c.dataset.tgt;
+    paintScript();
+  };
+});
+paintScript();
+
+// Recording. The level meter exists so you can see the mic is actually picking
+// you up before committing 25 seconds to it.
+(function () {
+  const btn = document.getElementById("recBtn");
+  const state = document.getElementById("recState");
+  const meter = document.getElementById("recMeter");
+  const out = document.getElementById("tryOut");
+  if (!btn) return;
+
+  let rec = null, chunks = [], stream = null, audioCtx = null, raf = null, t0 = 0;
+
+  function stopMeter() {
+    if (raf) cancelAnimationFrame(raf);
+    raf = null;
+    if (audioCtx) { audioCtx.close(); audioCtx = null; }
+    meter.style.width = "0%";
+  }
+
+  btn.onclick = async function () {
+    if (rec && rec.state === "recording") { rec.stop(); return; }
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      state.textContent = "microphone blocked: " + e.message;
+      return;
+    }
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const an = audioCtx.createAnalyser();
+    an.fftSize = 512;
+    audioCtx.createMediaStreamSource(stream).connect(an);
+    const buf = new Uint8Array(an.frequencyBinCount);
+
+    t0 = Date.now();
+    (function tick() {
+      an.getByteTimeDomainData(buf);
+      let peak = 0;
+      for (let i = 0; i < buf.length; i++) peak = Math.max(peak, Math.abs(buf[i] - 128));
+      meter.style.width = Math.min(100, (peak / 128) * 180) + "%";
+      state.textContent = "recording · " + ((Date.now() - t0) / 1000).toFixed(0) + "s";
+      raf = requestAnimationFrame(tick);
+    })();
+
+    chunks = [];
+    rec = new MediaRecorder(stream);
+    rec.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = function () {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      stopMeter();
+      btn.textContent = "Record again";
+      btn.classList.remove("is-rec");
+
+      const blob = new Blob(chunks, { type: "audio/webm" });
+      const secs = Math.round((Date.now() - t0) / 1000);
+      state.textContent = secs + "s captured";
+
+      const from = dirSrc.split("-")[0].toUpperCase();
+      const to = dirTgt.split("-")[0].toUpperCase();
+      out.hidden = false;
+      out.innerHTML =
+        '<div class="out-row"><div><h4>Your recording</h4>' +
+        '<audio controls src="' + URL.createObjectURL(blob) + '"></audio></div></div>' +
+        '<div class="clone-status" id="cloneStatus">Cloning ' + from + " → " + to + ' …</div>';
+
+      cloneIt(blob);
+    };
+
+    async function cloneIt(blob) {
+      const st = document.getElementById("cloneStatus");
+      const fd = new FormData();
+      fd.append("file", blob, "take.webm");
+      fd.append("src_lang", dirSrc);
+      fd.append("target_lang", dirTgt);
+
+      let token;
+      try {
+        const r = await fetch("/va-api/api/clone", { method: "POST", body: fd });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || r.status);
+        token = j.token;
+      } catch (e) {
+        st.className = "clone-status is-bad";
+        st.textContent = "Could not start the clone: " + e.message;
+        return;
+      }
+
+      // Dubbing is not instant. Report the service's own progress rather than
+      // spinning a bar that means nothing.
+      for (;;) {
+        await new Promise(function (r) { setTimeout(r, 5000); });
+        let s2;
+        try {
+          s2 = await (await fetch("/va-api/api/clone/" + token)).json();
+        } catch (e) { continue; }
+
+        if (s2.status === "completed") {
+          st.className = "clone-status is-ok";
+          st.innerHTML = "Done — that is your voice, in " +
+            (dirTgt === "hi-IN" ? "Hindi" : "English") + ", saying words you never said." +
+            '<div style="margin-top:12px"><audio controls style="width:100%;height:36px" src="/va-api/api/clone/' +
+            token + '/audio"></audio></div>';
+          return;
+        }
+        if (s2.status === "failed") {
+          st.className = "clone-status is-bad";
+          st.textContent = "The clone failed: " + (s2.error || "unknown error");
+          return;
+        }
+        st.textContent = (s2.step || "working") + " — " + (s2.progress || 0) + "%";
+      }
+    }
+
+    rec.start();
+    btn.textContent = "Stop";
+    btn.classList.add("is-rec");
+  };
+})();
+
+// --- three-screen switcher ---
+document.querySelectorAll(".vbtn").forEach(function(b){
+  b.onclick=function(){
+    var want=b.dataset.view;
+    document.querySelectorAll(".vbtn").forEach(function(x){x.classList.toggle("is-on",x===b);});
+    document.querySelectorAll(".view").forEach(function(v){
+      v.classList.toggle("is-on", v.id==="view-"+want);
+    });
+    // Leaving the audio playing while the reader moves on is rude.
+    document.querySelectorAll("audio").forEach(function(a){a.pause();});
+    document.querySelector(".lab-stage").scrollTop=0;
+  };
+});
+
+
 const DEMO = window.DEMO;
 
 const BIO_BANDS = {

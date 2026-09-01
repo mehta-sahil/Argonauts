@@ -32,12 +32,14 @@ export const useEnvironmentCheck = () => {
       console.warn("Device enumeration error:", e);
     }
 
-    // 3. Measure frame arrival jitter over 45-60 frames
+    // 3. Measure frame arrival jitter over ~30 frames (<=2s at 15fps)
     const deltas = await new Promise((resolve) => {
+      // No synthesised samples. Inventing plausible deltas here would hand every
+      // client a guaranteed pass on the synthetic-pacing check — including an
+      // attacker who simply deletes requestVideoFrameCallback. Report the gap
+      // and let the server fail closed.
       if (!videoElement || !videoElement.requestVideoFrameCallback) {
-        // Fallback for browsers without requestVideoFrameCallback
-        const simulated = Array.from({ length: 40 }, () => 33.3 + (Math.random() * 2.4 - 1.2));
-        return resolve(simulated);
+        return resolve([]);
       }
 
       let count = 0;
@@ -55,7 +57,7 @@ export const useEnvironmentCheck = () => {
         lastTime = frameTime;
         count++;
 
-        if (count < 45) {
+        if (count < 30) {
           videoElement.requestVideoFrameCallback(onFrame);
         } else {
           resolve(samples);

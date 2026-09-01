@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { IDUpload } from './components/IDUpload';
-import { DeepfakeProbe } from './components/DeepfakeProbe';
 import { VideoPanel } from './components/VideoPanel';
 import { TelemetryPanel } from './components/TelemetryPanel';
 import { VerdictBar } from './components/VerdictBar';
 import { BlockedModal } from './components/BlockedModal';
+import { StepBar } from './components/StepBar';
+import { STEPS, stepIndexForPhase, PHASE_PROMPT } from './steps';
 import { useEnvironmentCheck } from './hooks/useEnvironmentCheck';
 import { useMediaPipe } from './hooks/useMediaPipe';
 import { useFrameCapture } from './hooks/useFrameCapture';
@@ -47,6 +48,10 @@ export const App = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockReason, setBlockReason] = useState(null);
   const [blockDetails, setBlockDetails] = useState(null);
+
+  // 'live' = webcam, 'attack' = replay deepfakevid.mp4 through the same element.
+  const [sourceMode, setSourceMode] = useState('live');
+  const [showDetails, setShowDetails] = useState(false);
 
   // References
   const videoRef = useRef(null);
@@ -216,18 +221,39 @@ export const App = () => {
     resetCount();
   }, [disconnect, resetCount]);
 
+  const activeStep = Math.max(0, stepIndexForPhase(currentPhase));
+  const step = STEPS[activeStep];
+  const failed = verdict && verdict.result && verdict.result !== 'PASSED';
+
+  // One line, written for the person on camera. The action challenge supplies
+  // its own wording; everything else comes from the step model, never from the
+  // backend's engineer-facing phase titles.
+  const prompt =
+    currentPhase === 'action_challenge' && actionChallenge
+      ? (actionChallenge.instruction || phaseInstruction)
+      : PHASE_PROMPT[currentPhase] || step.blurb;
+
   return (
-    <div className="min-h-screen bg-[#0B0C16] text-slate-100 flex flex-col justify-between">
-      
-      {/* Top Bar */}
+    <div className="min-h-screen bg-[#0B0C16] text-slate-100 flex flex-col">
+
       <Header isConnected={isConnected} phase={currentPhase} />
 
-      {/* Main Content Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full flex-1">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
-          
-          {/* Left Column (7 cols): ID Upload + Live Video */}
-          <div className="lg:col-span-7 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full flex-1 flex flex-col">
+
+        {/* Progress: three dots, not six phase titles */}
+        <div className="mb-8">
+          <StepBar activeIndex={activeStep} failed={Boolean(failed)} />
+        </div>
+
+        {/* One heading, one instruction. Nothing else competes with it. */}
+        <div className="text-center mb-6">
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-100">{step.heading}</h1>
+          <p className="text-sm text-slate-400 mt-2 min-h-[1.25rem]">{prompt}</p>
+        </div>
+
+        {/* STEP 1 — Capture */}
+        {activeStep === 0 && (
+          <div className="space-y-4">
             <IDUpload
               onIDUploaded={({ sessionId, faceCropBase64 }) => {
                 setSessionId(sessionId);
@@ -236,40 +262,89 @@ export const App = () => {
               isSessionActive={isSessionActive}
             />
 
-            <DeepfakeProbe />
-
-            <VideoPanel
-              videoRef={videoRef}
-              phase={currentPhase}
-              phaseTitle={phaseTitle}
-              phaseInstruction={phaseInstruction}
-              flashConfig={flashConfig}
-              actionChallenge={actionChallenge}
-              actionCount={actionCount}
-              landmarks={landmarks}
-              ear={ear}
-              mar={mar}
-              yaw={yaw}
-              browRatio={browRatio}
-              neuralSmile={neuralSmile}
-              neuralBrow={neuralBrow}
-              isStreaming={isSessionActive}
-              onFlashColorChange={setActiveFlashColor}
-            />
+            {/* Frame source. Live is the real product; attack replays the
+                deepfake through the identical pipeline so a judge can watch the
+                same three steps reach the opposite verdict. */}
+            <div className="flex items-center justify-center gap-1 p-1 rounded-xl bg-navy-dark/60 border border-navy-border w-fit mx-auto">
+              {[
+                { id: 'live', label: 'Live camera' },
+                { id: 'attack', label: 'Deepfake attack' }
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setSourceMode(m.id)}
+                  disabled={isSessionActive}
+                  className={[
+                    'px-4 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-40',
+                    sourceMode === m.id
+                      ? (m.id === 'attack'
+                          ? 'bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/40'
+                          : 'bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/40')
+                      : 'text-slate-500 hover:text-slate-300'
+                  ].join(' ')}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            {sourceMode === 'attack' && (
+              <p className="text-xs text-rose-300/80 text-center max-w-md mx-auto">
+                Replaying a pre-recorded deepfake instead of your camera. The pipeline
+                is not told the difference — it has to catch it.
+              </p>
+            )}
           </div>
+        )}
 
-          {/* Right Column (5 cols): Security Telemetry */}
-          <div className="lg:col-span-5 h-full">
-            <TelemetryPanel
-              telemetry={telemetry}
-              currentPhase={currentPhase}
-            />
-          </div>
-
+        {/* The camera mounts once and stays mounted for the whole session.
+            Mounting it on step 2 only would start the stream after the session
+            had already begun, so jitter sampling would see no frames — and that
+            check now fails closed. Visibility is CSS; the stream is continuous. */}
+        <div className={activeStep === 1 ? 'block' : 'hidden'}>
+          <VideoPanel
+            videoRef={videoRef}
+            phase={currentPhase}
+            phaseTitle={phaseTitle}
+            phaseInstruction={phaseInstruction}
+            flashConfig={flashConfig}
+            actionChallenge={actionChallenge}
+            actionCount={actionCount}
+            landmarks={landmarks}
+            ear={ear}
+            mar={mar}
+            yaw={yaw}
+            browRatio={browRatio}
+            neuralSmile={neuralSmile}
+            neuralBrow={neuralBrow}
+            isStreaming={isSessionActive}
+            onFlashColorChange={setActiveFlashColor}
+            sourceMode={sourceMode}
+          />
         </div>
 
-        {/* Bottom Verdict Bar */}
-        <div className="mt-4 sm:mt-6">
+        {/* STEP 3 — Verify */}
+        {activeStep === 2 && (
+          <TelemetryPanel telemetry={telemetry} currentPhase={currentPhase} />
+        )}
+
+        {/* Details drawer: every signal, collapsed by default. */}
+        {activeStep !== 2 && isSessionActive && (
+          <div className="mt-4">
+            <button
+              onClick={() => setShowDetails((v) => !v)}
+              className="text-xs text-slate-500 hover:text-slate-300 transition-colors mx-auto block"
+            >
+              {showDetails ? 'Hide' : 'Show'} security details
+            </button>
+            {showDetails && (
+              <div className="mt-3">
+                <TelemetryPanel telemetry={telemetry} currentPhase={currentPhase} />
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-6">
           <VerdictBar
             verdict={verdict}
             timeRemaining={timeRemaining}

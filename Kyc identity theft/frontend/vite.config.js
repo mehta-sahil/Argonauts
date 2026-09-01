@@ -24,6 +24,7 @@ export default defineConfig({
       // Live lab backends (local Docker containers). Each strips its prefix.
       '/pp-api': { target: 'http://localhost:8091', changeOrigin: true, rewrite: (p) => p.replace(/^\/pp-api/, '') },
       '/cb-api': { target: 'http://localhost:8092', changeOrigin: true, rewrite: (p) => p.replace(/^\/cb-api/, '') },
+      '/va-api': { target: 'http://localhost:8093', changeOrigin: true, rewrite: (p) => p.replace(/^\/va-api/, '') },
     },
   },
 })

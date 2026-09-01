@@ -150,6 +150,10 @@ class WebSocketHandler:
                 }
             })
             await websocket.close(code=4003)
+            session.env_received.set()
+            return
+
+        session.env_received.set()
 
     @staticmethod
     async def _handle_frame(websocket: WebSocket, session: SessionState, msg: dict):
@@ -309,7 +313,28 @@ class WebSocketHandler:
                 "title": "Phase 2: Client Environment & Integrity Gate",
                 "instruction": "Inspecting browser environment, camera driver, and frame delivery timing..."
             })
-            await asyncio.sleep(2.5)
+
+            # Wait for the client's env_data rather than sleeping a fixed 2.5s.
+            # Jitter sampling needs ~30 video frames, which is ~2s on a 15fps
+            # camera — a blind sleep let the gate advance first, so a block
+            # landed in the middle of the flash phase instead of here.
+            try:
+                await asyncio.wait_for(session.env_received.wait(), timeout=8.0)
+            except asyncio.TimeoutError:
+                # Fails closed: no environment report means the gate is unproven.
+                session.telemetry["automation"] = {
+                    "status": "FAILED",
+                    "display": "NO ENVIRONMENT REPORT",
+                    "value": 0.0,
+                    "details": {"reason": "client sent no env_data within 8s"}
+                }
+                await websocket.send_json({
+                    "type": "telemetry",
+                    "check": "automation",
+                    "status": "FAILED",
+                    "display": "NO ENVIRONMENT REPORT",
+                    "details": {"reason": "client sent no env_data within 8s"}
+                })
 
             if session.is_blocked:
                 return
@@ -341,9 +366,11 @@ class WebSocketHandler:
                 flash_frames = session.get_recent_frames(count=16)
 
             observed_rgbs = []
+            frames_with_face = 0
             for f in flash_frames:
                 skin_roi = FlashPADAnalyzer.extract_skin_roi(f.image_bgr, f.face_bbox)
                 if skin_roi.size > 0:
+                    frames_with_face += 1
                     mean_bgr = cv2.mean(skin_roi)[:3]
                     observed_rgbs.append((mean_bgr[2], mean_bgr[1], mean_bgr[0])) # RGB
 
@@ -352,7 +379,20 @@ class WebSocketHandler:
                 observed_rgbs
             )
             
-            pct_display = f"{corr_score * 100:.1f}% MATCH" if flash_passed else "MISMATCH (UNAUTHENTIC REFLECTION)"
+            # Say which of the two failure modes happened. "no face was visible"
+            # and "the reflection did not track the sequence" are different
+            # problems and the operator should not have to guess which.
+            flash_details = {
+                **flash_details,
+                "frames_examined": len(flash_frames),
+                "frames_with_face": frames_with_face,
+            }
+            if not flash_passed and frames_with_face < 3:
+                pct_display = f"NO FACE VISIBLE ({frames_with_face}/{len(flash_frames)} frames)"
+            elif flash_passed:
+                pct_display = f"{corr_score * 100:.1f}% MATCH"
+            else:
+                pct_display = "MISMATCH (UNAUTHENTIC REFLECTION)"
             session.telemetry["flash_pad"] = {
                 "status": "PASSED" if flash_passed else "FAILED",
                 "display": pct_display,

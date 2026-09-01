@@ -19,7 +19,9 @@ export const VideoPanel = ({
   neuralBrow = 0.0,
   isStreaming,
   onStreamReady,
-  onFlashColorChange
+  onFlashColorChange,
+  sourceMode = 'live',
+  attackClip = '/sample/deepfakevid.mp4'
 }) => {
   const [showMesh, setShowMesh] = useState(true);
   const [flashColor, setFlashColor] = useState(null);
@@ -28,13 +30,34 @@ export const VideoPanel = ({
   const frameCountRef = useRef(0);
   const lastFpsTimeRef = useRef(Date.now());
 
-  // Initialize Camera Stream
+  // Initialize the frame source.
+  // 'attack' replays the deepfake clip through the same <video> element the
+  // camera would use, so every downstream consumer — frame capture, MediaPipe,
+  // the websocket — is byte-identical to a live session. That is the point: the
+  // pipeline is not told which source it is looking at.
   useEffect(() => {
     let stream = null;
+
+    const startClip = () => {
+      setCameraError(null);
+      const el = videoRef.current;
+      if (!el) return;
+      el.srcObject = null;
+      el.src = attackClip;
+      el.loop = true;
+      el.muted = true;
+      el.playsInline = true;
+      el.onloadedmetadata = () => {
+        el.play().catch((e) => setCameraError('Could not play the attack clip: ' + e.message));
+        if (onStreamReady) onStreamReady(el);
+      };
+      el.onerror = () => setCameraError('Attack clip failed to load from ' + attackClip);
+    };
 
     const startCamera = async () => {
       try {
         setCameraError(null);
+        if (videoRef.current) videoRef.current.src = '';
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             width: { ideal: 640 },
@@ -58,14 +81,23 @@ export const VideoPanel = ({
       }
     };
 
-    startCamera();
+    if (sourceMode === 'attack') {
+      startClip();
+    } else {
+      startCamera();
+    }
 
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
+      const el = videoRef.current;
+      if (el) {
+        el.onloadedmetadata = null;
+        el.onerror = null;
+      }
     };
-  }, [videoRef, onStreamReady]);
+  }, [videoRef, onStreamReady, sourceMode, attackClip]);
 
   // FPS Counter
   useEffect(() => {

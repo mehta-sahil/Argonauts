@@ -127,7 +127,7 @@ async def upload_id_document(file: UploadFile = File(...)):
         return UploadIDResponse(
             session_id=session.session_id,
             face_crop_base64=face_crop_b64,
-            face_detected=True,
+            face_detected=detected,
             confidence=round(conf, 3),
             message="ID Document Baseline Extracted Successfully."
         )
